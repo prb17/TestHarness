@@ -1,4 +1,4 @@
-#include "TestHarness.h"
+#include "../include/TestHarness.h"
 #include <iostream>
 #include <functional>
 #include <cassert>
@@ -23,28 +23,35 @@ auto lambda = [=]() {
 	return x - y;
 };
 
+bool ITest() {
+	int x = 5;
+	int y = 7;
+	return x == y;
+}
+
 int main() {
 	std::cout << "hello world" << std::endl;
-
 	bool result;
 	testObj to = testObj();
-	TestHarness harness = TestHarness("outputfile.txt");
-	result = harness.Test<testObj, int>(Logger::LOW, to, 25);	
-	result = harness.Test<testObj, int>(Logger::MED, to, 55);
-	result = harness.Test<testObj, int>(Logger::HIGH, to, 70);
-	result = harness.Test<testObj, double>(Logger::HIGH, to, 70.01);
-	std::cout << std::endl;
+	//TestHarness harness = TestHarness("outputfile.txt");
+	TestHarness harness = TestHarness();
+	harness.Test(ITest);
 
-	result = harness.Test<int(), int>(Logger::LOW, func1, 25);
-	result = harness.Test<int(), int>(Logger::MED, func1, 55);
-	result = harness.Test<int(), int>(Logger::HIGH, func1, 70);
-	result = harness.Test<int(), double>(Logger::HIGH, func1, 70.01);
-	std::cout << std::endl;
+	result = harness.Test<testObj, int>(to, 25);
+	result = harness.Test<testObj, int>(to, 55);
+	result = harness.Test<testObj, int>(to, 70);
+	result = harness.Test<testObj, double>(to, 70.01);
+
+	result = harness.Test<int(), int>(func1, 25);
+	result = harness.Test<int(), int>(func1, 55);
+	result = harness.Test<int(), int>(func1, 70);
+	result = harness.Test<int(), double>(func1, 70.01);
 
 	std::function<int()> func2 = lambda;
-	result = harness.Test<std::function<int()>, int>(Logger::LOW, func2, 25);
-	result = harness.Test<std::function<int()>, int>(Logger::MED, func2, 55);
-	result = harness.Test<std::function<int()>, int>(Logger::HIGH, func2, 70);
-	result = harness.Test<std::function<int()>, double>(Logger::HIGH, func2, 70.01);
-	std::cout << std::endl;
+	result = harness.Test<std::function<int()>, int>(func2, 25);
+	result = harness.Test<std::function<int()>, int>(func2, 55);
+	result = harness.Test<std::function<int()>, int>(func2, 70);
+	result = harness.Test<std::function<int()>, double>(func2, 70.01);
+
+	
 }

@@ -1,4 +1,4 @@
-#include "Logger.h"
+#include "../include/Logger.h"
 #include <stdio.h>
 
 Logger* Logger::instance = nullptr;
