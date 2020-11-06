@@ -13,8 +13,10 @@ public:
 
 	static Logger* Instance();
 
-	void log(LOG_LEVELS, std::string, FILE*);
 
+	void log(LOG_LEVELS level, std::string, FILE*);
+	void set_level(LOG_LEVELS level);
+	LOG_LEVELS get_level(void);
 private: 
 	static Logger *instance;
 };
