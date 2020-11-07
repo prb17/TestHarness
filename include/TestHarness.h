@@ -39,6 +39,7 @@ bool TestHarness::Test(T func, U exp_output) {
 
 	bool retval = false;
 	U result;
+	logger->log(logger->HIGH, "Running test number"+std::to_string(testNum)+"starting time:"+getDate()+"\n", log_file_ptr);
 	try {
 		retval = ((result = func()) == exp_output);
 		logger->log(logger->LOW, ((retval) ? "Passed." : "Failed."), log_file_ptr);
@@ -50,7 +51,8 @@ bool TestHarness::Test(T func, U exp_output) {
 	catch (...) {
 		logger->log(logger->MED, " Error: Unhandled exception has occured.", log_file_ptr);
 	}	
-
-	logger->log(logger->LOW, "\n", log_file_ptr);
+	logger->log(Logger->HIGH, "test number.. completed at" + getDate());
+	logger->log(logger->LOW, "\n \n \n \n", log_file_ptr);
+	
 	return retval;
 }

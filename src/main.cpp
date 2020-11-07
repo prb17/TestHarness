@@ -22,13 +22,15 @@ int func1() {
 auto lambda = [=]() {
 	return x - y;
 };
+class thing 1
+{
+	bool ITest() TestHarness::ITest {
+		int x = 5;
+		int y = 7;
+		return x == y;
+	}
 
-bool ITest() {
-	int x = 5;
-	int y = 7;
-	return x == y;
 }
-
 int main() {
 	std::cout << "hello world" << std::endl;
 	bool result;
@@ -52,6 +54,27 @@ int main() {
 	result = harness.Test<std::function<int()>, int>(func2, 55);
 	result = harness.Test<std::function<int()>, int>(func2, 70);
 	result = harness.Test<std::function<int()>, double>(func2, 70.01);
-
-	
+	//import DLL OBJECT
+	harness.setLoggerLevel(Logger::LOG_LEVELS::LOW);
+	harness.addTest(ITest1);
+	harness.addTest(ITest2);
+	harness.addTest(ITest3);
+	harness.TEST();
 }
+
+bool ITest1()
+{
+	return true
+}
+bool ITest2()
+{
+	return false;
+}
+bool ITest3()
+{
+
+	int obj[20]
+		obj[31] = 10;
+	return true;
+}
+

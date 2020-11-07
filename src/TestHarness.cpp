@@ -28,6 +28,7 @@ bool TestHarness::openLogFile() {
 	return err;
 }
 
+
 std::string TestHarness::getDate() {
 	//This block is for the current time only, I couldn't find anything more concise not to say there isn't a better way
 	const int size = 26;
