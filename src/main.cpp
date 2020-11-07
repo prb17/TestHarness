@@ -1,5 +1,4 @@
 #include "../include/TestHarness.h"
-#include <iostream>
 #include <functional>
 #include <cassert>
 #include <thread>
@@ -22,59 +21,56 @@ int func1() {
 auto lambda = [=]() {
 	return x - y;
 };
-class thing 1
-{
-	bool ITest() TestHarness::ITest {
-		int x = 5;
-		int y = 7;
-		return x == y;
-	}
 
-}
-int main() {
-	std::cout << "hello world" << std::endl;
-	bool result;
-	testObj to = testObj();
-	//TestHarness harness = TestHarness("outputfile.txt");
-	TestHarness harness = TestHarness();
-	harness.Test(ITest);
-
-	result = harness.Test<testObj, int>(to, 25);
-	result = harness.Test<testObj, int>(to, 55);
-	result = harness.Test<testObj, int>(to, 70);
-	result = harness.Test<testObj, double>(to, 70.01);
-
-	result = harness.Test<int(), int>(func1, 25);
-	result = harness.Test<int(), int>(func1, 55);
-	result = harness.Test<int(), int>(func1, 70);
-	result = harness.Test<int(), double>(func1, 70.01);
-
-	std::function<int()> func2 = lambda;
-	result = harness.Test<std::function<int()>, int>(func2, 25);
-	result = harness.Test<std::function<int()>, int>(func2, 55);
-	result = harness.Test<std::function<int()>, int>(func2, 70);
-	result = harness.Test<std::function<int()>, double>(func2, 70.01);
-	//import DLL OBJECT
-	harness.setLoggerLevel(Logger::LOG_LEVELS::LOW);
-	harness.addTest(ITest1);
-	harness.addTest(ITest2);
-	harness.addTest(ITest3);
-	harness.TEST();
+bool ITest() {
+	return false;
 }
 
 bool ITest1()
 {
-	return true
+	return true;
 }
+
 bool ITest2()
 {
 	return false;
 }
 bool ITest3()
 {
-
-	int obj[20]
-		obj[31] = 10;
 	return true;
+}
+
+int main() {
+	testObj to = testObj();
+	//TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>("outputfile.txt");
+	TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
+
+	int test1 = intHarness.addTest(func1, 1);
+	int test2 = intHarness.addTest(to, 2);
+	int test3 = intHarness.addTest(to, 3);
+	int test4 = intHarness.addTest(to, 4);
+	intHarness.executeSingleTest(test2);
+	intHarness.removeTest(test3);
+
+	int num = intHarness.getNumTests();
+	intHarness.removeTest(test2);
+	intHarness.executeSingleTest(test4);
+	intHarness.clearTests();
+
+	int test5 = intHarness.addTest(to, 5);
+	int test6 = intHarness.addTest(to, 6);
+	intHarness.removeTest(test5);
+	int test7 = intHarness.addTest(to, 7);
+
+	intHarness.executeTests();
+
+	TestHarness<std::function<bool()>, bool> boolHarness = TestHarness<std::function<bool()>, bool>();
+	test1 = boolHarness.addTest(ITest1);
+	test2 = boolHarness.addTest(ITest2);
+	test3 = boolHarness.addTest(ITest3);
+	boolHarness.executeTests();
+
+	boolHarness.removeTest(test2);
+	boolHarness.executeTests();
 }
 
