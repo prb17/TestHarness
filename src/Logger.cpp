@@ -20,3 +20,7 @@ Logger::Logger() {}
 void Logger::log(LOG_LEVELS level, std::string msg, FILE *out_file) {
 	fwrite(msg.data(), sizeof(char), msg.length(), out_file);
 }
+void Logger::get_level()
+{
+
+}

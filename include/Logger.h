@@ -19,4 +19,5 @@ public:
 	LOG_LEVELS get_level(void);
 private: 
 	static Logger *instance;
+	LOG_LEVELS mLevel;
 };
