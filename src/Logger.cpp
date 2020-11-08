@@ -1,7 +1,6 @@
 #include "../include/Logger.h"
 #include <stdio.h>
 
-Logger* Logger::instance = nullptr;
 //possibly make an member variable for FILE* that handles the output
 //Make it so the logger can be used by any other program, not just the harness
 //add a config function that can adjust how the logger writes to the file/stdout
@@ -24,10 +23,6 @@ void Logger::log(LOG_LEVELS level, std::string msg) {
 		if (mFile)
 		{
 			fwrite(msg.data(), sizeof(char), msg.length(), mFile);
-		}
-		else
-		{
-			fwrite("ERROR FILE HANDLE NOT SETUP CORRECTLY:" + msg.data(), sizeof(char), msg.length + 39, stdout);
 		}
 	}
 	return;

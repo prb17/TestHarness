@@ -34,7 +34,7 @@ private:
 	bool Test(T, U);
 	void executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator);
 	
-	Logger *mLogger;
+	Logger mLogger;
 	std::map<uint64_t, std::pair<T,U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 };
 
@@ -42,14 +42,12 @@ template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0) {
-	logger = logger->Instance();
-	log_file_ptr = stdout;
+TestHarness<T, U>::TestHarness() : curr_test_num(0), mLogger("test_output") {
 }
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0) {
-	mLogger(file_name)
+TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name) {
+	
 	//openLogFile();
 	curr_test_num = 0;
 }
@@ -131,15 +129,15 @@ template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
 	curr_test_num = it->first + 1;
 
-	logger->log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate() + "\n");
+	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate() + "\n");
 	if (it != tests.end()) {
 		Test(it->second.first, it->second.second);
 	} else {
-		logger->log(Logger::LOG_LEVELS::MEDIUM, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
-		logger->log(Logger::LOG_LEVELS::MEDIUM, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.\n");
 	}
-	logger->log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
-	logger->log(Logger::LOG_LEVELS::LOW, "\n \n \n \n");
+	mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
+	mLogger.log(Logger::LOG_LEVELS::LOW, "\n \n \n \n");
 }
 
 template <typename T, typename U>
@@ -162,14 +160,14 @@ bool TestHarness<T, U>::Test(T func, U exp_output) {
 	
 	try {
 		retval = ((result = func()) == exp_output);
-		logger->log(Logger::LOG_LEVELS::LOW, ((retval) ? "Passed.\n" : "Failed.\n"));
-		logger->log(Logger::LOG_LEVELS::MED, "Expected output was '" + std::to_string((U)exp_output) + "', expression evaluated to '" + std::to_string(result) + "'\n");
+		mLogger.log(Logger::LOG_LEVELS::LOW, ((retval) ? "Passed.\n" : "Failed.\n"));
+		mLogger.log(Logger::LOG_LEVELS::MED, "Expected output was '" + std::to_string((U)exp_output) + "', expression evaluated to '" + std::to_string(result) + "'\n");
 	}
 	catch (std::exception& e) {
-		logger->log(Logger::LOG_LEVELS::MED, "Error: " + std::string(e.what()) + "\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "Error: " + std::string(e.what()) + "\n");
 	}
 	catch (...) {
-		logger->log(Logger::LOG_LEVELS::MED, "Error: Unhandled exception has occured.\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "Error: Unhandled exception has occured.\n");
 	}		
 	
 	return retval;
