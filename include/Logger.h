@@ -8,16 +8,10 @@ public:
 		MED,
 		HIGH
 	};
-
-	Logger();
-
-	static Logger* Instance();
-
-
-	void log(LOG_LEVELS level, std::string, FILE*);
+	void log(LOG_LEVELS level, std::string);
 	void set_level(LOG_LEVELS level);
 	LOG_LEVELS get_level(void);
 private: 
-	static Logger *instance;
+	FILE* mFile;
 	LOG_LEVELS mLevel;
 };
