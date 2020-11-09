@@ -15,5 +15,6 @@ public:
 	LOG_LEVELS get_level(void);
 private: 
 	FILE* mFile;
+	bool send_to_STDOUT
 	LOG_LEVELS mLevel;
 };

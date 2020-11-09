@@ -42,7 +42,7 @@ template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0), mLogger("test_output") {
+TestHarness<T, U>::TestHarness() : curr_test_num(0), mLogger() {
 }
 
 template <typename T, typename U>
@@ -54,8 +54,7 @@ TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogge
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
-	: curr_test_num(0) {
-	mLogger(file_name, level);
+	: curr_test_num(0), mLogger(file_name, level) {
 	//openLogFile();
 }
 
