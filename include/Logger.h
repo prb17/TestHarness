@@ -8,6 +8,7 @@ public:
 		MED,
 		HIGH
 	};
+	Logger();
 	Logger(std::string file_name);
 	Logger(std::string file_name, Logger::LOG_LEVELS level);
 	void log(LOG_LEVELS level, std::string);
