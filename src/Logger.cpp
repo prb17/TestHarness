@@ -8,6 +8,7 @@
 Logger::Logger()
 {
 	mFile = stdout;
+	mLevel = Logger::LOG_LEVELS::LOW;
 	return;
 }
 
@@ -24,8 +25,9 @@ Logger::Logger(std::string file_name, Logger::LOG_LEVELS level)
 	mLevel = level;
 	return;
 }
+
 void Logger::log(LOG_LEVELS level, std::string msg) {
-	if ((int)level > (int)mLevel)
+	if ((int)level <= (int)mLevel)
 	{
 		if (mFile)
 		{
@@ -37,4 +39,9 @@ void Logger::log(LOG_LEVELS level, std::string msg) {
 Logger::LOG_LEVELS Logger::get_level()
 {
 	return mLevel;
+}
+
+void Logger::set_level(Logger::LOG_LEVELS level) 
+{
+	mLevel = level;
 }
