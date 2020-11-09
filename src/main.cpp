@@ -22,23 +22,56 @@ auto lambda = [=]() {
 	return x - y;
 };
 
-bool ITest() {
-	return false;
-}
-
-bool ITest1()
-{
+bool iTest1() {
 	return true;
 }
 
-bool ITest2()
-{
+bool iTest2() {
 	return false;
 }
-bool ITest3()
-{
+
+bool iTest3() {
+
+	throw std::range_error("Out of Range");
+
 	return true;
 }
+
+bool iTest4() {
+	int i = 0;
+	int x = 5;
+	int quotient = x / i;
+	return true;
+}
+
+bool iTest5() {
+
+	throw std::domain_error("Out of domain scope");
+
+	return true;
+}
+
+bool iTest6() {
+
+	throw std::length_error("Out of length");
+
+	return true;
+}
+
+bool iTest7() {
+
+	throw std::overflow_error("overflow!!");
+
+	return true;
+}
+
+bool iTest8() {
+
+	throw std::underflow_error("Underflow!!");
+
+	return true;
+}
+
 
 int main() {
 	testObj to = testObj();
