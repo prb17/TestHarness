@@ -1,8 +1,18 @@
 #include "../include/TestHarness.h"
+#include <stdexcept>
 #include <functional>
 #include <cassert>
 #include <thread>
+#include <iostream>       // std::cout
+#include <thread>         // std::thread
+#include <mutex>          // std::mutex, std::unique_lock
+#include <deque>
 
+#define NUM_THREADS 20
+bool termpool;
+std::mutex queue_mutex;
+std::condition_variable condition;
+std::deque<void (*)()> Queue;
 struct testObj {
 	int x = 20;
 	int y = 50;
@@ -72,8 +82,34 @@ bool iTest8() {
 	return true;
 }
 
+void Infinite_loop_function()
+{
+	void (*Job)();
+	while (true)
+	{
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			condition.wait(lock, [] {return !Queue.empty() || termpool});
+			Job = Queue.front();
+			Queue.pop_front();
+		}
+		Job(); // function<void()> type
+	}
+};
+
+void Add_Job(void (*New_Job)())
+{
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		Queue.push_back(New_Job);
+	}
+	condition.notify_one();
+};
+
 
 int main() {
+	std::vector<std::thread> worker;
+	
 	testObj to = testObj();
 	//TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>("outputfile.txt");
 	TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
@@ -98,9 +134,9 @@ int main() {
 	intHarness.executeTests();
 
 	TestHarness<std::function<bool()>, bool> boolHarness = TestHarness<std::function<bool()>, bool>();
-	test1 = boolHarness.addTest(ITest1);
-	test2 = boolHarness.addTest(ITest2);
-	test3 = boolHarness.addTest(ITest3);
+	test1 = boolHarness.addTest(iTest1);
+	test2 = boolHarness.addTest(iTest2);
+	test3 = boolHarness.addTest(iTest3);
 	boolHarness.executeTests();
 
 	boolHarness.removeTest(test2);
