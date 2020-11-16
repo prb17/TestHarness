@@ -50,7 +50,7 @@ bool iTest3() {
 bool iTest4() {
 	int i = 0;
 	int x = 5;
-	int quotient = x / i;
+	int quotient = x / i; //not a standard exception so divide by 0 doesn't throw an error.  looking into it in the future
 	return true;
 }
 
@@ -129,15 +129,19 @@ int main() {
 	int test5 = intHarness.addTest(to, 5);
 	int test6 = intHarness.addTest(to, 6);
 	intHarness.removeTest(test5);
-	int test7 = intHarness.addTest(to, 7);
-
+	int test7 = intHarness.addTest(lambda, 7);
+	intHarness.setLoggerLevel(Logger::LOG_LEVELS::MED);
 	intHarness.executeTests();
+	intHarness.setLoggerLevel(Logger::LOG_LEVELS::HIGH);
+	intHarness.executeTests();
+	intHarness.clearTests();
 
 	TestHarness<std::function<bool()>, bool> boolHarness = TestHarness<std::function<bool()>, bool>();
-	test1 = boolHarness.addTest(iTest1);
-	test2 = boolHarness.addTest(iTest2);
-	test3 = boolHarness.addTest(iTest3);
+	test1 = boolHarness.addTest(ITest1);
+	test2 = boolHarness.addTest(ITest2);
+	test3 = boolHarness.addTest(ITest3);
 	boolHarness.executeTests();
+	boolHarness.setLoggerLevel(Logger::LOG_LEVELS::HIGH);
 
 	boolHarness.removeTest(test2);
 	boolHarness.executeTests();
