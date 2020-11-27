@@ -1,17 +1,38 @@
 #pragma once
 #include "Logger.h"
+#include "Cpp11-BlockingQueue.h"
+#include "Utilities.h"
+#include "Comm.h"
+#include "Message.h"
+
 #include <functional>
 #include<chrono>
 #include<ctime>
 #include<vector>
 #include<map>
+#include<thread>
+#include<iostream>
+
+#define NUM_THREADS 5
+
+using namespace MsgPassingCommunication;
+using namespace Sockets;
+
+enum WORKER_MESSAGES {
+	STARTING_UP,
+	READY,
+	PROCESSING
+};
 
 template <typename T, typename U>
 class TestHarness {
 public:
 	TestHarness();
+	//TestHarness(const TestHarness<T, U>&) = delete;
+	//TestHarness<T, U>& operator=(const TestHarness<T, U>&) = delete;
 	TestHarness(std::string);
 	TestHarness(std::string, Logger::LOG_LEVELS);	
+	~TestHarness();
 
 	void setLoggerLevel(Logger::LOG_LEVELS);
 	Logger::LOG_LEVELS getLoggerLevel();
@@ -22,43 +43,155 @@ public:
 	void removeTest(uint64_t);
 	void clearTests();
 	void executeSingleTest(uint64_t);	
-	void executeTests();	
+	void executeTests();
 
-private:	
-	static uint64_t total_test_num; //capture all tests across all loggers (of each type)
-	uint64_t curr_test_num;
+private:
+	static std::vector < std::pair<WORKER_MESSAGES, std::thread*>> thread_pool; //contains the state of the thread and thread obj itself
+	static uint64_t total_test_num; //capture all tests across all loggers (of each datatype)
+	static BlockingQueue<Message> readyQueue;
+	static BlockingQueue<Message> testRequestQueue;
+
+	void createThreads();
+	void harnessWorker(int);
+	void messageListener();
+	void harnessManager();
+	void workerUpdater();
+	static void sendMessage(Message);
+	static void processMessage(Message);
+	
+	uint64_t curr_test_num;	
+	Logger mLogger;
+	EndPoint harness_ep;
+	Comm harness_comm;
+	std::map<uint64_t, std::pair<T,U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 	
 	std::string getDate();		
 	bool Test(T);
 	bool Test(T, U);
 	void executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator);
-	
-	Logger mLogger;
-	std::map<uint64_t, std::pair<T,U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 };
 
 template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0) {
-	mLogger = Logger();
+std::vector<std::pair<WORKER_MESSAGES, std::thread*>> TestHarness<T, U>::thread_pool;
+
+template <typename T, typename U>
+BlockingQueue<Message> TestHarness<T, U>::readyQueue;
+
+template <typename T, typename U>
+BlockingQueue<Message> TestHarness<T, U>::testRequestQueue;
+
+template <typename T, typename U>
+void TestHarness<T, U>::createThreads() {
+	std::thread listener(&TestHarness<T, U>::messageListener, this);
+	std::thread manager(&TestHarness<T, U>::harnessManager, this);
+	std::thread updater(&TestHarness<T, U>::workerUpdater, this);
+	listener.detach();
+	manager.detach();
+	updater.detach();
+
+	for (int i = 0; i < NUM_THREADS; i++) {
+		std::thread child(&TestHarness<T,U>::harnessWorker, this, i);
+		std::pair<WORKER_MESSAGES, std::thread*> p = std::make_pair(STARTING_UP, &child);
+		thread_pool.push_back(p);
+		child.detach();
+	}
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::harnessWorker(int worker_id) {
+	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is starting\n");
+	int i = 0;
+
+	while (i < 1) {
+		mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is recieving messages\n");
+		i++;
+	}
+	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is finshed\n");
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::harnessManager() {
+	int i = 0;
+	Message msg;
+	while (i < 5) {
+		msg = testRequestQueue.deQ();
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()) + "\n");
+		i++;
+	}
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::workerUpdater() {
+	int i = 0;
+	Message msg;
+	while (i < 5) {
+		msg = readyQueue.deQ();
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()) + "\n");
+		i++;
+	}
+}
+
+//listens for data over a socket and enqueues the data onto appropriate queue
+template <typename T, typename U>
+void TestHarness<T, U>::messageListener() {
+	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for work thread messages\n");
+	
+	Message msg;
+	int i = 0;
+	while (true) {
+		msg = harness_comm.getMessage();
+		if (msg.getMsgType() == Message::TEST_REQUEST) {
+			testRequestQueue.enQ(msg);
+		} else if (msg.getMsgType() == Message::WORKER_MESSAGE) {
+			readyQueue.enQ(msg);
+		} else {
+			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()) + "\n");
+		}
+		i++;
+	}
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::sendMessage(Message msg) {
+
+}
+
+template <typename T, typename U>
+TestHarness<T, U>::TestHarness() : curr_test_num(0), mLogger(Logger()) {
+	mLogger.set_prefix("TestHarness: ");
+	harness_ep = EndPoint("localhost", 9090);
+	harness_comm = Comm(harness_ep, "master-harness");
+	//harness_comm.start();
+	createThreads();
 }
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name) {
-
+	harness_ep = EndPoint("localhost", 9090);
+	harness_comm = Comm(harness_ep, "master-harness");
+	//harness_comm.start();
+	createThreads();
 }
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
 	: curr_test_num(0), mLogger(file_name, level) {
+	harness_ep = EndPoint("localhost", 9090);
+	harness_comm = Comm(harness_ep, "master-harness");
+	//harness_comm.start();
+	createThreads();
+}
 
+template <typename T, typename U>
+TestHarness<T, U>::~TestHarness() {
+	//harness_comm.stop();
 }
 
 template <typename T, typename U>
 std::string TestHarness<T, U>::getDate() {
-	//This block is for the current time only, I couldn't find anything more concise not to say there isn't a better way
 	const int size = 26;
 	char buf[size];
 	auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
