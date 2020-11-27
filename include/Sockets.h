@@ -286,7 +286,7 @@ namespace Sockets
         if (!clientSocket.validState()) {
           continue;
         }
-        SsocketLogger.log(logLevel, "\n  -- server accepted connection");
+        socketLogger.log(logLevel, "\n  -- server accepted connection");
 
         // start thread to handle client request
 
@@ -294,7 +294,7 @@ namespace Sockets
         std::thread clientThread(co, std::move(clientSocket));
         clientThread.detach();  // detach - listener won't access thread again
       }
-      StaticLogger<1>::write("\n  -- Listen thread stopping");
+      socketLogger.log(logLevel, "\n  -- Listen thread stopping");
     }
     );
     ListenThread.detach();
