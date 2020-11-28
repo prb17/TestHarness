@@ -44,6 +44,7 @@ public:
 	void clearTests();
 	void executeSingleTest(uint64_t);	
 	void executeTests();
+	void startManager();
 
 private:
 	static std::vector < std::pair<WORKER_MESSAGES, std::thread*>> thread_pool; //contains the state of the thread and thread obj itself
@@ -56,12 +57,12 @@ private:
 	void messageListener();
 	void harnessManager();
 	void workerUpdater();
+
 	
 	uint64_t curr_test_num;	
 	Logger mLogger;
 	EndPoint harness_ep;
 	Comm harness_comm;
-	SocketSystem ss;
 	size_t basePort;
 	std::map<uint64_t, std::pair<T,U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 	
@@ -86,7 +87,6 @@ BlockingQueue<Message> TestHarness<T, U>::testRequestQueue = BlockingQueue<Messa
 template <typename T, typename U>
 void TestHarness<T, U>::createThreads() {
 	std::thread listener(&TestHarness<T, U>::messageListener, this);
-	std::thread manager(&TestHarness<T, U>::harnessManager, this);
 	std::thread updater(&TestHarness<T, U>::workerUpdater, this);
 	listener.detach();
 	updater.detach();
@@ -97,8 +97,6 @@ void TestHarness<T, U>::createThreads() {
 		thread_pool.push_back(p);
 		child.detach();
 	}
-
-	manager.join();
 }
 
 template <typename T, typename U>
@@ -108,18 +106,19 @@ void TestHarness<T, U>::harnessWorker(int worker_id) {
 	EndPoint worker_ep = EndPoint("localhost", worker_portnum);
 	Comm worker_comm(worker_ep, "worker-" + std::to_string(worker_id));
 	worker_comm.start();
-	Message msg = Message(worker_ep, harness_ep);
+	Message msg = Message(harness_ep, worker_ep);
 	msg.setName("Ready");
 	msg.setMsgType(Message::MESSAGE_TYPE::WORKER_MESSAGE);
 	msg.setAuthor("worker-" + std::to_string(worker_id));
 	msg.setDate(getDate());
 	msg.setMsgBody("Ready");
 
-	//std::chrono::duration<int, std::milli> time = 1000;
-	std::this_thread::sleep_for(std::chrono::seconds(5));
-	worker_comm.postMessage(msg);
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 	worker_comm.postMessage(msg);
 	mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " sent ready message");
+	Message rply = worker_comm.getMessage();
+	mLogger.log(Logger::LOG_LEVELS::LOW, worker_comm.name() + "recieved:" + rply.getName());
+	
 	while (true) {
 		msg = worker_comm.getMessage();
 		mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is recieving messages");
@@ -132,11 +131,19 @@ void TestHarness<T, U>::harnessWorker(int worker_id) {
 
 template <typename T, typename U>
 void TestHarness<T, U>::harnessManager() {
+	mLogger.log(Logger::LOG_LEVELS::LOW, "harness manager is starting");
+
 	Message msg;
 	while (true) {
 		msg = testRequestQueue.deQ();
 		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()));
 	}
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::startManager() {
+	std::thread manager(&TestHarness<T, U>::harnessManager, this);
+	manager.join();
 }
 
 template <typename T, typename U>
@@ -151,7 +158,7 @@ void TestHarness<T, U>::workerUpdater() {
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
 void TestHarness<T, U>::messageListener() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for work thread messages");
+	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker thread messages");
 	
 	Message msg;
 	while (true) {
@@ -169,7 +176,7 @@ void TestHarness<T, U>::messageListener() {
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Logger()), 
-		ss(), harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness") { //TODO: basePort won't work when creating EndPoint for some reason
+		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness") { //TODO: basePort won't work when creating EndPoint for some reason
 	mLogger.set_prefix("TestHarness: ");
 	harness_comm.start();
 	createThreads();

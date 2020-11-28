@@ -70,8 +70,13 @@ private:
 };
 //----< copy constructor >--------------------------------------------
 template<typename T>
-BlockingQueue<T>::BlockingQueue(const BlockingQueue<T>& other) {
-
+BlockingQueue<T>::BlockingQueue(const BlockingQueue<T>& bq) {
+    std::lock_guard<std::mutex> l(mtx_);
+    q_ = bq.q_;
+    while (bq.q_.size() > 0)  // clear bq
+        bq.q_.pop();
+    qLogger = bq.qLogger;
+    logLevel = bq.logLevel;
 }
 
 

@@ -111,24 +111,26 @@ int main() {
 	
 	testObj to = testObj();
 	//TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>("outputfile.txt");
+	SocketSystem ss;
 	TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
+	intHarness.startManager();
 
-	uint64_t test1 = intHarness.addTest(func1, 1);
-	uint64_t test2 = intHarness.addTest(to, 2);
-	uint64_t test3 = intHarness.addTest(to, 3);
-	uint64_t test4 = intHarness.addTest(to, 4);
+	//uint64_t test1 = intHarness.addTest(func1, 1);
+	//uint64_t test2 = intHarness.addTest(to, 2);
+	//uint64_t test3 = intHarness.addTest(to, 3);
+	//uint64_t test4 = intHarness.addTest(to, 4);
 	//intHarness.executeSingleTest(test2);
 	//intHarness.removeTest(test3);
 
-	uint64_t num = intHarness.getNumTests();
+	//uint64_t num = intHarness.getNumTests();
 	//intHarness.removeTest(test2);
 	//intHarness.executeSingleTest(test4);
 	//intHarness.clearTests();
 
-	uint64_t test5 = intHarness.addTest(to, 5);
-	uint64_t test6 = intHarness.addTest(to, 6);
+	//uint64_t test5 = intHarness.addTest(to, 5);
+	//uint64_t test6 = intHarness.addTest(to, 6);
 	//intHarness.removeTest(test5);
-	uint64_t test7 = intHarness.addTest(lambda, 7);
+	//uint64_t test7 = intHarness.addTest(lambda, 7);
 	//intHarness.setLoggerLevel(Logger::LOG_LEVELS::MED);
 	//intHarness.executeTests();
 	//intHarness.setLoggerLevel(Logger::LOG_LEVELS::HIGH);

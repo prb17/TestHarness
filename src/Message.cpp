@@ -2,7 +2,7 @@
 #include <sstream>
 
 Message::Message() {}
-Message::Message(EndPoint src, EndPoint dest) {
+Message::Message(EndPoint dest, EndPoint src) {
 	source = src;
 	destination = dest;
 }
@@ -33,7 +33,7 @@ std::string Message::toString() {
 		<< msg_type << ","
 		<< author << ","
 		<< date << ","
-		<< msg_body;
+		<< msg_body << "\n";
 	return ss.str();
 }
 

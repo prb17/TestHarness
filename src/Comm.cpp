@@ -11,6 +11,9 @@
 #include <functional>
 #include <conio.h>
 
+#pragma warning(disable:4522)
+#pragma comment(lib, "Ws2_32.lib")
+
 using namespace MsgPassingCommunication;
 using namespace Sockets;
 using SUtils = Utilities::StringHelper;

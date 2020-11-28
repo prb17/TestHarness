@@ -147,6 +147,7 @@ namespace Sockets
   public:
     SocketSystem();
     ~SocketSystem();
+    WSADATA getWsaData();
   private:
     int iResult;
     WSADATA wsaData;
@@ -294,7 +295,7 @@ namespace Sockets
         // start thread to handle client request
 
         //std::thread clientThread(std::ref(co), std::move(clientSocket));
-        std::thread clientThread(co, std::move(clientSocket));
+        std::thread clientThread(co, clientSocket);
         clientThread.detach();  // detach - listener won't access thread again
       }
       socketLogger.log(logLevel, "\n  -- Listen thread stopping");

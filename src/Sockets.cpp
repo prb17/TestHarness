@@ -13,6 +13,7 @@
 
 #include "../include/Sockets.h"
 #include <iostream>
+#include <string>
 #include <sstream>
 #include <thread>
 #include <memory>
@@ -48,6 +49,10 @@ SocketSystem::~SocketSystem()
   ssLogger.log(logLevel, "\n  -- Socket System cleaning up\n");
 }
 
+WSADATA SocketSystem::getWsaData() {
+    return wsaData;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Socket class members
 
@@ -55,6 +60,9 @@ SocketSystem::~SocketSystem()
 
 Socket::Socket(IpVer ipver) : ipver_(ipver)
 {
+    //SocketSystem ss;
+    //WSADATA temp = ss.getWsaData();
+    //memcpy(&wsaData, &temp, sizeof(WSADATA));
   ZeroMemory(&hints, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
@@ -70,6 +78,9 @@ Socket::Socket(IpVer ipver) : ipver_(ipver)
 */
 Socket::Socket(::SOCKET sock) : socket_(sock)
 {
+    //SocketSystem ss;
+    //WSADATA temp = ss.getWsaData();
+    //memcpy(&wsaData, &temp, sizeof(WSADATA));
   ipver_ = IP4;
   ZeroMemory(&hints, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -239,7 +250,7 @@ std::string Socket::recvString(byte terminator)
     iResult = ::recv(socket_, buffer, buflen, 0);
     if (iResult == 0 || iResult == INVALID_SOCKET)
     {
-      //StaticLogger<1>::write("\n  -- invalid socket in Socket::recvString");
+      socketLogger.log(logLevel, "\n  -- invalid socket in Socket::recvString");
       break;
     }
     if (buffer[0] == terminator)
@@ -304,11 +315,19 @@ bool Socket::waitForData(size_t timeToWait, size_t timeToCheck)
 
 Sockets::SocketConnecter::SocketConnecter(const SocketConnecter& s)
 {
+    wsaData = s.wsaData;
+    socket_ = s.socket_;
+    result = s.result;
+    ptr = s.ptr;
+    hints = s.hints;
+    iResult = s.iResult;
+    ipver_ = s.ipver_;
+    socketLogger = s.socketLogger;
+    logLevel = s.logLevel;
 }
 
 SocketConnecter& Sockets::SocketConnecter::operator=(const SocketConnecter& s)
 {
-    // TODO: insert return statement here
     wsaData = s.wsaData;
     socket_ = s.socket_;
     result = s.result;
@@ -428,11 +447,21 @@ bool SocketConnecter::connect(std::string& ip, size_t port)
 
 Sockets::SocketListener::SocketListener(const SocketListener& s)
 {
+    port_ = s.port_;
+    acceptFailed_ = s.acceptFailed_;
+    wsaData = s.wsaData;
+    socket_ = s.socket_;
+    result = s.result;
+    ptr = s.ptr;
+    hints = s.hints;
+    iResult = s.iResult;
+    ipver_ = s.ipver_;
+    socketLogger = s.socketLogger;
+    logLevel = s.logLevel;
 }
 
 SocketListener& Sockets::SocketListener::operator=(const SocketListener& s)
 {
-    // TODO: insert return statement here
     port_ = s.port_;
     acceptFailed_ = s.acceptFailed_;
     wsaData = s.wsaData;
@@ -449,6 +478,7 @@ SocketListener& Sockets::SocketListener::operator=(const SocketListener& s)
 
 SocketListener::SocketListener(size_t port, IpVer ipv) : Socket(ipv), port_(port)
 {
+    static SocketSystem ss;
   socket_ = INVALID_SOCKET;
   ZeroMemory(&hints, sizeof(hints));
   if (ipv == Socket::IP6)
