@@ -66,13 +66,14 @@ namespace MsgPassingCommunication
   class Sender
   {
   public:
-    Sender(const std::string& name = "Sender");
+    Sender(std::string name = "Sender");
+    Sender(const Sender&);
+    Sender& operator=(Sender const&);
     ~Sender();
     void start();
     void stop();
     bool connect(EndPoint ep);
     void postMessage(Message msg);
-    bool sendFile(const std::string& fileName);
   private:
     BlockingQueue<Message> sndQ;
     SocketConnecter connecter;
@@ -86,7 +87,7 @@ namespace MsgPassingCommunication
   class Comm
   {
   public:
-    Comm(EndPoint ep, const std::string& name = "Comm");
+    Comm(EndPoint ep, std::string name = "Comm");
     void start();
     void stop();
     void postMessage(Message msg);

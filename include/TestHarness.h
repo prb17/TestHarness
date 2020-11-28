@@ -13,7 +13,7 @@
 #include<thread>
 #include<iostream>
 
-#define NUM_THREADS 5
+#define NUM_THREADS 1
 
 using namespace MsgPassingCommunication;
 using namespace Sockets;
@@ -56,13 +56,13 @@ private:
 	void messageListener();
 	void harnessManager();
 	void workerUpdater();
-	static void sendMessage(Message);
-	static void processMessage(Message);
 	
 	uint64_t curr_test_num;	
 	Logger mLogger;
 	EndPoint harness_ep;
 	Comm harness_comm;
+	SocketSystem ss;
+	size_t basePort;
 	std::map<uint64_t, std::pair<T,U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 	
 	std::string getDate();		
@@ -75,13 +75,13 @@ template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-std::vector<std::pair<WORKER_MESSAGES, std::thread*>> TestHarness<T, U>::thread_pool;
+std::vector<std::pair<WORKER_MESSAGES, std::thread*>> TestHarness<T, U>::thread_pool = std::vector<std::pair<WORKER_MESSAGES, std::thread*>>();
 
 template <typename T, typename U>
-BlockingQueue<Message> TestHarness<T, U>::readyQueue;
+BlockingQueue<Message> TestHarness<T, U>::readyQueue = BlockingQueue<Message>();
 
 template <typename T, typename U>
-BlockingQueue<Message> TestHarness<T, U>::testRequestQueue;
+BlockingQueue<Message> TestHarness<T, U>::testRequestQueue = BlockingQueue<Message>();
 
 template <typename T, typename U>
 void TestHarness<T, U>::createThreads() {
@@ -89,82 +89,89 @@ void TestHarness<T, U>::createThreads() {
 	std::thread manager(&TestHarness<T, U>::harnessManager, this);
 	std::thread updater(&TestHarness<T, U>::workerUpdater, this);
 	listener.detach();
-	manager.detach();
 	updater.detach();
 
-	for (int i = 0; i < NUM_THREADS; i++) {
+	for (int i = 1; i <= NUM_THREADS; i++) {
 		std::thread child(&TestHarness<T,U>::harnessWorker, this, i);
 		std::pair<WORKER_MESSAGES, std::thread*> p = std::make_pair(STARTING_UP, &child);
 		thread_pool.push_back(p);
 		child.detach();
 	}
+
+	manager.join();
 }
 
 template <typename T, typename U>
 void TestHarness<T, U>::harnessWorker(int worker_id) {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is starting\n");
-	int i = 0;
+	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is starting");
+	int worker_portnum = basePort + worker_id;
+	EndPoint worker_ep = EndPoint("localhost", worker_portnum);
+	Comm worker_comm(worker_ep, "worker-" + std::to_string(worker_id));
+	worker_comm.start();
+	Message msg = Message(worker_ep, harness_ep);
+	msg.setName("Ready");
+	msg.setMsgType(Message::MESSAGE_TYPE::WORKER_MESSAGE);
+	msg.setAuthor("worker-" + std::to_string(worker_id));
+	msg.setDate(getDate());
+	msg.setMsgBody("Ready");
 
-	while (i < 1) {
-		mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is recieving messages\n");
-		i++;
+	//std::chrono::duration<int, std::milli> time = 1000;
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+	worker_comm.postMessage(msg);
+	worker_comm.postMessage(msg);
+	mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " sent ready message");
+	while (true) {
+		msg = worker_comm.getMessage();
+		mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is recieving messages");
+
 	}
-	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is finshed\n");
+	worker_comm.stop(); //todo: change this to stop when it receives a stop message
+	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is finshed");
+
 }
 
 template <typename T, typename U>
 void TestHarness<T, U>::harnessManager() {
-	int i = 0;
 	Message msg;
-	while (i < 5) {
+	while (true) {
 		msg = testRequestQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()) + "\n");
-		i++;
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()));
 	}
 }
 
 template <typename T, typename U>
 void TestHarness<T, U>::workerUpdater() {
-	int i = 0;
 	Message msg;
-	while (i < 5) {
+	while (true) {
 		msg = readyQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()) + "\n");
-		i++;
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()));
 	}
 }
 
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
 void TestHarness<T, U>::messageListener() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for work thread messages\n");
+	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for work thread messages");
 	
 	Message msg;
-	int i = 0;
 	while (true) {
 		msg = harness_comm.getMessage();
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'");
 		if (msg.getMsgType() == Message::TEST_REQUEST) {
 			testRequestQueue.enQ(msg);
 		} else if (msg.getMsgType() == Message::WORKER_MESSAGE) {
 			readyQueue.enQ(msg);
 		} else {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()) + "\n");
+			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()));
 		}
-		i++;
 	}
 }
 
 template <typename T, typename U>
-void TestHarness<T, U>::sendMessage(Message msg) {
-
-}
-
-template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0), mLogger(Logger()) {
+TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Logger()), 
+		ss(), harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness") { //TODO: basePort won't work when creating EndPoint for some reason
 	mLogger.set_prefix("TestHarness: ");
-	harness_ep = EndPoint("localhost", 9090);
-	harness_comm = Comm(harness_ep, "master-harness");
-	//harness_comm.start();
+	harness_comm.start();
 	createThreads();
 }
 
@@ -172,7 +179,7 @@ template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name) {
 	harness_ep = EndPoint("localhost", 9090);
 	harness_comm = Comm(harness_ep, "master-harness");
-	//harness_comm.start();
+	harness_comm.start();
 	createThreads();
 }
 
@@ -181,13 +188,13 @@ TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
 	: curr_test_num(0), mLogger(file_name, level) {
 	harness_ep = EndPoint("localhost", 9090);
 	harness_comm = Comm(harness_ep, "master-harness");
-	//harness_comm.start();
+	harness_comm.start();
 	createThreads();
 }
 
 template <typename T, typename U>
 TestHarness<T, U>::~TestHarness() {
-	//harness_comm.stop();
+	harness_comm.stop();
 }
 
 template <typename T, typename U>
@@ -247,12 +254,12 @@ template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
 	curr_test_num = it->first + 1;
 
-	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate() + "\n");
+	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate());
 	if (it != tests.end()) {
 		Test(it->second.first, it->second.second);
 	} else {
 		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
-		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.");
 	}
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
 	mLogger.log(Logger::LOG_LEVELS::MED, "\n \n \n \n");
@@ -280,14 +287,14 @@ bool TestHarness<T, U>::Test(T func, U exp_output) {
 		retval = ((result = func()) == exp_output);
 	}
 	catch (std::exception& e) {
-		mLogger.log(Logger::LOG_LEVELS::MED, "Error: " + std::string(e.what()) + "\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "Error: " + std::string(e.what()));
 	}
 	catch (...) {
-		mLogger.log(Logger::LOG_LEVELS::MED, "Error: Unhandled exception has occured.\n");
+		mLogger.log(Logger::LOG_LEVELS::MED, "Error: Unhandled exception has occured.");
 	}		
 	
-	mLogger.log(Logger::LOG_LEVELS::LOW, "Test number #" + std::to_string(curr_test_num) + ": " + ((retval) ? "Passed.\n" : "Failed.\n"));
-	mLogger.log(Logger::LOG_LEVELS::MED, "Expected output was '" + std::to_string(exp_output) + "', expression evaluated to '" + std::to_string(result) + "'\n");
+	mLogger.log(Logger::LOG_LEVELS::LOW, "Test number #" + std::to_string(curr_test_num) + ": " + ((retval) ? "Passed.\n" : "Failed."));
+	mLogger.log(Logger::LOG_LEVELS::MED, "Expected output was '" + std::to_string(exp_output) + "', expression evaluated to '" + std::to_string(result) + "'");
 
 	return retval;
 }

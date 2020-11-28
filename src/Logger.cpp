@@ -69,6 +69,7 @@ void Logger::log(LOG_LEVELS level, std::string msg) {
 		{			
 			fwrite(prefix.data(), sizeof(char), prefix.length(), mFile);
 			fwrite(msg.data(), sizeof(char), msg.length(), mFile);
+			fwrite("\n", sizeof(char), 1, mFile);
 		}
 	}
 	return;

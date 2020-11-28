@@ -52,12 +52,26 @@ Message Receiver::getMessage()
 }
 //----< constructor initializes endpoint object >--------------------
 
-Sender::Sender(const std::string& name) : sndrName(name)
+Sender::Sender(std::string name) : sndrName(name)
 {
     senderLogger = Logger();
     senderLogger.set_prefix("Sender: ");
     logLevel = Logger::LOG_LEVELS::LOW;
     lastEP = EndPoint();  // used to detect change in destination
+}
+MsgPassingCommunication::Sender::Sender(const Sender&)
+{
+
+}
+Sender& MsgPassingCommunication::Sender::operator=(Sender const& other)
+{
+    // TODO: insert return statement here
+    connecter = other.connecter;
+    lastEP = other.lastEP;
+    sndrName = other.sndrName;
+    senderLogger = other.senderLogger;
+    logLevel = other.logLevel;
+    return *this;
 }
 //----< destructor waits for send thread to terminate >--------------
 
@@ -87,15 +101,15 @@ void Sender::start()
       {
         connecter.shutDown();
         //connecter.close();
-        senderLogger.log(logLevel, "\n  -- attempting to connect to new endpoint: " + msg.getDestination().toString());
+        senderLogger.log(logLevel, "\n  -- " + sndrName + " attempting to connect to new endpoint: " + msg.getDestination().toString());
         if (!connect(msg.getDestination()))
         {
-            senderLogger.log(logLevel, "\n can't connect");
+            senderLogger.log(logLevel, "\n " + sndrName + " can't connect");
           continue;
         }
         else
         {
-            senderLogger.log(logLevel, "\n  connected to " + msg.getDestination().toString());
+            senderLogger.log(logLevel, "\n  " + sndrName + " connected to " + msg.getDestination().toString());
         }
       }
       bool sendRslt = connecter.send(msgStr.length(), (Socket::byte*)msgStr.c_str());
@@ -127,14 +141,7 @@ void Sender::postMessage(Message msg)
 {
   sndQ.enQ(msg);
 }
-//----< sends binary file >------------------------------------------
-/*
-*  - not implemented yet
-*/
-bool Sender::sendFile(const std::string& fileName)
-{
-  return false;
-}
+
 //----< callable object posts incoming message to rcvQ >-------------
 /*
 *  This is ClientHandler for receiving messages and posting
@@ -207,7 +214,7 @@ private:
   Logger::LOG_LEVELS logLevel;
 };
 
-Comm::Comm(EndPoint ep, const std::string& name) : rcvr(ep, name), sndr(name), commName(name) {}
+Comm::Comm(EndPoint ep, std::string name) : rcvr(ep, name), sndr(name), commName(name) {}
 
 void Comm::start()
 {

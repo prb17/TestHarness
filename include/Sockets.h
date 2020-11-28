@@ -166,14 +166,14 @@ namespace Sockets
     using byte = char;
 
     // disable copy construction and assignment
-    Socket(const Socket& s) = delete;
-    Socket& operator=(const Socket& s) = delete;
+    //Socket(const Socket& s) = delete;
+    //Socket& operator=(const Socket& s) = delete;
 
     Socket(IpVer ipver = IP4);
     Socket(::SOCKET);
-    Socket(Socket&& s);
+    //Socket(Socket&& s);
     operator ::SOCKET() { return socket_; }
-    Socket& operator=(Socket&& s);
+    //Socket& operator=(Socket&& s);
     virtual ~Socket();
 
     IpVer& ipVer();
@@ -181,9 +181,9 @@ namespace Sockets
     bool recv(size_t bytes, byte* buffer);
     size_t sendStream(size_t bytes, byte* buffer);
     size_t recvStream(size_t bytes, byte* buffer);
-    bool sendString(const std::string& str, byte terminator = '\0');
+    bool sendString(std::string str, byte terminator = '\0');
     std::string recvString(byte terminator = '\0');
-    static std::string removeTerminator(const std::string& src);
+    static std::string removeTerminator(std::string& src);
     size_t bytesWaiting();
     bool waitForData(size_t timeToWait, size_t timeToCheck);
     bool shutDownSend();
@@ -210,15 +210,15 @@ namespace Sockets
   class SocketConnecter : public Socket
   {
   public:
-    SocketConnecter(const SocketConnecter& s) = delete;
-    SocketConnecter& operator=(const SocketConnecter& s) = delete;
+    SocketConnecter(const SocketConnecter& s);
+    SocketConnecter& operator=(const SocketConnecter& s);
 
     SocketConnecter();
-    SocketConnecter(SocketConnecter&& s);
-    SocketConnecter& operator=(SocketConnecter&& s);
+    //SocketConnecter(SocketConnecter&& s);
+    //SocketConnecter& operator=(SocketConnecter&& s);
     virtual ~SocketConnecter();
 
-    bool connect(const std::string& ip, size_t port);
+    bool connect(std::string& ip, size_t port);
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -229,12 +229,12 @@ namespace Sockets
   class SocketListener : public Socket
   {
   public:
-    SocketListener(const SocketListener& s) = delete;
-    SocketListener& operator=(const SocketListener& s) = delete;
+    SocketListener(const SocketListener& s);
+    SocketListener& operator=(const SocketListener& s);
 
     SocketListener(size_t port, IpVer ipv = IP6);
-    SocketListener(SocketListener&& s);
-    SocketListener& operator=(SocketListener&& s);
+    //SocketListener(SocketListener&& s);
+    //SocketListener& operator=(SocketListener&& s);
     virtual ~SocketListener();
 
     template<typename CallObj>
@@ -243,6 +243,7 @@ namespace Sockets
   private:
     bool bind();
     bool listen();
+    void accept(Socket&);
     Socket accept();
     std::atomic<bool> stop_ = false;
     size_t port_;
@@ -282,7 +283,9 @@ namespace Sockets
 
         // Accept a client socket - blocking call
 
-        Socket clientSocket = accept();    // uses move ctor
+        Socket clientSocket;
+        //accept(clientSocket);    // pass ref to avoid move ctor
+        clientSocket = accept();
         if (!clientSocket.validState()) {
           continue;
         }

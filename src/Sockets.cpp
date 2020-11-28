@@ -81,33 +81,33 @@ Socket::Socket(::SOCKET sock) : socket_(sock)
 }
 //----< transfer socket ownership with move constructor >--------------------
 
-Socket::Socket(Socket&& s)
-{
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  ZeroMemory(&hints, sizeof(hints));
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-  socketLogger = s.socketLogger;
-  logLevel = s.logLevel;
-}
+//Socket::Socket(Socket&& s)
+//{
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  ZeroMemory(&hints, sizeof(hints));
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//  socketLogger = s.socketLogger;
+//  logLevel = s.logLevel;
+//}
 //----< transfer socket ownership with move assignment >---------------------
 
-Socket& Socket::operator=(Socket&& s)
-{
-  if (this == &s) return *this;
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-  socketLogger = s.socketLogger;
-  logLevel = s.logLevel;
-  return *this;
-}
+//Socket& Socket::operator=(Socket&& s)
+//{
+//  if (this == &s) return *this;
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//  socketLogger = s.socketLogger;
+//  logLevel = s.logLevel;
+//  return *this;
+//}
 //----< get, set IP version >------------------------------------------------
 /*
 *  Note: 
@@ -203,7 +203,7 @@ bool Socket::recv(size_t bytes, byte* buffer)
  *  Doesn't return until entire string has been sent
  *  By default terminator is '\0'
  */
-bool Socket::sendString(const std::string& str, byte terminator)
+bool Socket::sendString(std::string str, byte terminator)
 {
   size_t bytesSent, bytesRemaining = str.size();
   const byte* pBuf = &(*str.begin());
@@ -254,7 +254,7 @@ std::string Socket::recvString(byte terminator)
 }
 //----< strips terminator character that recvString includes >---------------
 
-std::string Socket::removeTerminator(const std::string& src)
+std::string Socket::removeTerminator(std::string& src)
 {
   return src.substr(0, src.size() - 1);
 }
@@ -302,34 +302,53 @@ bool Socket::waitForData(size_t timeToWait, size_t timeToCheck)
 
 //----< constructor inherits its base Socket's Win32 socket_ member >--------
 
+Sockets::SocketConnecter::SocketConnecter(const SocketConnecter& s)
+{
+}
+
+SocketConnecter& Sockets::SocketConnecter::operator=(const SocketConnecter& s)
+{
+    // TODO: insert return statement here
+    wsaData = s.wsaData;
+    socket_ = s.socket_;
+    result = s.result;
+    ptr = s.ptr;
+    hints = s.hints;
+    iResult = s.iResult;
+    ipver_ = s.ipver_;
+    socketLogger = s.socketLogger;
+    logLevel = s.logLevel;
+    return *this;
+}
+
 SocketConnecter::SocketConnecter() : Socket()
 {
   hints.ai_family = AF_UNSPEC;
 }
 //----< move constructor transfers ownership of Win32 socket_ member >-------
 
-SocketConnecter::SocketConnecter(SocketConnecter&& s) : Socket()
-{
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-}
+//SocketConnecter::SocketConnecter(SocketConnecter&& s) : Socket()
+//{
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//}
 //----< move assignment transfers ownership of Win32 socket_ member >--------
 
-SocketConnecter& SocketConnecter::operator=(SocketConnecter&& s)
-{
-  if (this == &s) return *this;
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-  return *this;
-}
+//SocketConnecter& SocketConnecter::operator=(SocketConnecter&& s)
+//{
+//  if (this == &s) return *this;
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//  return *this;
+//}
 //----< destructor announces destruction if Verbose(true) >------------------
 
 SocketConnecter::~SocketConnecter()
@@ -338,7 +357,7 @@ SocketConnecter::~SocketConnecter()
 }
 //----< request to connect to ip and port >----------------------------------
 
-bool SocketConnecter::connect(const std::string& ip, size_t port)
+bool SocketConnecter::connect(std::string& ip, size_t port)
 {
   size_t uport = htons((u_short)port);
   std::string sPort = Conv<size_t>::toString(uport);
@@ -363,7 +382,7 @@ bool SocketConnecter::connect(const std::string& ip, size_t port)
     if (ptr->ai_family == AF_INET) { // IPv4
       struct sockaddr_in *ipv4 = (struct sockaddr_in *)ptr->ai_addr;
       addr = &(ipv4->sin_addr);
-      ipver = const_cast<char *>(std::string("IPv4").c_str());
+      ipver = const_cast<char *>("IPv4");
     }
     else { // IPv6
       struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)ptr->ai_addr;
@@ -407,6 +426,27 @@ bool SocketConnecter::connect(const std::string& ip, size_t port)
 
 //----< constructs SocketListener, specifying type of protocol to use >------
 
+Sockets::SocketListener::SocketListener(const SocketListener& s)
+{
+}
+
+SocketListener& Sockets::SocketListener::operator=(const SocketListener& s)
+{
+    // TODO: insert return statement here
+    port_ = s.port_;
+    acceptFailed_ = s.acceptFailed_;
+    wsaData = s.wsaData;
+    socket_ = s.socket_;
+    result = s.result;
+    ptr = s.ptr;
+    hints = s.hints;
+    iResult = s.iResult;
+    ipver_ = s.ipver_;
+    socketLogger = s.socketLogger;
+    logLevel = s.logLevel;
+    return *this;
+}
+
 SocketListener::SocketListener(size_t port, IpVer ipv) : Socket(ipv), port_(port)
 {
   socket_ = INVALID_SOCKET;
@@ -421,30 +461,30 @@ SocketListener::SocketListener(size_t port, IpVer ipv) : Socket(ipv), port_(port
 }
 //----< move constructor transfers ownership of Win32 socket_ member >-------
 
-SocketListener::SocketListener(SocketListener&& s) : Socket()
-{
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-  hints.ai_flags = s.hints.ai_flags;
-}
+//SocketListener::SocketListener(SocketListener&& s) : Socket()
+//{
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//  hints.ai_flags = s.hints.ai_flags;
+//}
 //----< move assignment transfers ownership of Win32 socket_ member >--------
 
-SocketListener& SocketListener::operator=(SocketListener&& s)
-{
-  if (this == &s) return *this;
-  socket_ = s.socket_;
-  s.socket_ = INVALID_SOCKET;
-  ipver_ = s.ipver_;
-  hints.ai_family = s.hints.ai_family;
-  hints.ai_socktype = s.hints.ai_socktype;
-  hints.ai_protocol = s.hints.ai_protocol;
-  hints.ai_flags = s.hints.ai_flags;
-  return *this;
-}
+//SocketListener& SocketListener::operator=(SocketListener&& s)
+//{
+//  if (this == &s) return *this;
+//  socket_ = s.socket_;
+//  s.socket_ = INVALID_SOCKET;
+//  ipver_ = s.ipver_;
+//  hints.ai_family = s.hints.ai_family;
+//  hints.ai_socktype = s.hints.ai_socktype;
+//  hints.ai_protocol = s.hints.ai_protocol;
+//  hints.ai_flags = s.hints.ai_flags;
+//  return *this;
+//}
 //----< destructor announces destruction if Verbal(true) >-------------------
 
 SocketListener::~SocketListener()
@@ -518,7 +558,7 @@ bool SocketListener::listen()
 }
 //----< accepts incoming requrests to connect - blocking call >--------------
 
-Socket SocketListener::accept()
+void SocketListener::accept(Socket &c_sock)
 {
   ::SOCKET sock = ::accept(socket_, NULL, NULL);
   Socket clientSocket = sock;    // uses Socket(::SOCKET) promotion ctor
@@ -529,10 +569,30 @@ Socket SocketListener::accept()
     socketLogger.log(logLevel,
       "\n  -- this occurs when application shuts down while listener thread is blocked on Accept call"
     );
-    return clientSocket;
+    c_sock = clientSocket;
+    return;
   }
-  return clientSocket;
+  c_sock = clientSocket;
+  return;
 }
+
+Socket SocketListener::accept()
+{
+    ::SOCKET sock = ::accept(socket_, NULL, NULL);
+    Socket clientSocket = sock;    // uses Socket(::SOCKET) promotion ctor
+    if (!clientSocket.validState()) {
+        acceptFailed_ = true;
+        int error = WSAGetLastError();
+        socketLogger.log(logLevel, "\n  -- server accept failed with error: " + Conv<int>::toString(error));
+        socketLogger.log(logLevel,
+            "\n  -- this occurs when application shuts down while listener thread is blocked on Accept call"
+        );
+        return clientSocket;
+    }
+    return clientSocket;
+}
+
+
 //----< request SocketListener to stop accepting connections >---------------
 
 void SocketListener::stop()

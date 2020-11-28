@@ -10,7 +10,7 @@ public:
 		HIGH
 	};
 	Logger();
-	Logger(Logger const& other);
+	Logger(Logger const&);
 	Logger& operator=(Logger const&);
 	Logger(std::string file_name);
 	Logger(std::string file_name, Logger::LOG_LEVELS level);

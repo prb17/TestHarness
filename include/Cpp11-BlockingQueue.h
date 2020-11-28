@@ -46,6 +46,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include "Logger.h"
 
 template <typename T>
 class BlockingQueue {
@@ -53,10 +54,10 @@ public:
   BlockingQueue() {}
   BlockingQueue(BlockingQueue<T>&& bq);
   BlockingQueue<T>& operator=(BlockingQueue<T>&& bq);
-  BlockingQueue(const BlockingQueue<T>&) = delete;
-  BlockingQueue<T>& operator=(const BlockingQueue<T>&) = delete;
+  BlockingQueue(const BlockingQueue<T>&);
+  //BlockingQueue<T>& operator=(const BlockingQueue<T>&) = delete;
   T deQ();
-  void enQ(const T& t);
+  void enQ(T& t);
   T& front();
   void clear();
   size_t size();
@@ -64,7 +65,16 @@ private:
   std::queue<T> q_;
   std::mutex mtx_;
   std::condition_variable cv_;
+  Logger qLogger;
+  Logger::LOG_LEVELS logLevel;
 };
+//----< copy constructor >--------------------------------------------
+template<typename T>
+BlockingQueue<T>::BlockingQueue(const BlockingQueue<T>& other) {
+
+}
+
+
 //----< move constructor >---------------------------------------------
 
 template<typename T>
@@ -74,6 +84,8 @@ BlockingQueue<T>::BlockingQueue(BlockingQueue<T>&& bq) // need to lock so can't 
   q_ = bq.q_;
   while (bq.q_.size() > 0)  // clear bq
     bq.q_.pop();
+  qLogger = bq.qLogger;
+  logLevel = bq.logLevel;
   /* can't copy  or move mutex or condition variable, so use default members */
 }
 //----< move assignment >----------------------------------------------
@@ -87,6 +99,8 @@ BlockingQueue<T>& BlockingQueue<T>::operator=(BlockingQueue<T>&& bq)
   while (bq.q_.size() > 0)  // clear bq
     bq.q_.pop();
   /* can't move assign mutex or condition variable so use target's */
+  qLogger = bq.qLogger;
+  logLevel = bq.logLevel;
   return *this;
 }
 //----< remove element from front of queue >---------------------------
@@ -113,8 +127,12 @@ T BlockingQueue<T>::deQ()
   }
   // may have spurious returns so loop on !condition
 
-  while (q_.size() == 0)
-    cv_.wait(l, [this] () { return q_.size() > 0; });
+  while (q_.size() == 0) {
+     cv_.wait(l, [this] () { return q_.size() > 0; });
+     qLogger.log(logLevel, "BlockingQueue: condition variable woke up, q size: " + std::to_string(q_.size()));
+  }
+    
+
   T temp = q_.front();
   q_.pop();
   return temp;
@@ -122,7 +140,7 @@ T BlockingQueue<T>::deQ()
 //----< push element onto back of queue >------------------------------
 
 template<typename T>
-void BlockingQueue<T>::enQ(const T& t)
+void BlockingQueue<T>::enQ(T& t)
 {
   {
     std::unique_lock<std::mutex> l(mtx_);
