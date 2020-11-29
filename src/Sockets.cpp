@@ -600,10 +600,8 @@ Socket SocketListener::accept()
     if (!clientSocket.validState()) {
         acceptFailed_ = true;
         int error = WSAGetLastError();
-        socketLogger.log(logLevel, " -- server accept failed with error: " + Conv<int>::toString(error));
-        socketLogger.log(logLevel,
-            " -- this occurs when application shuts down while listener thread is blocked on Accept call"
-        );
+        std::cout << " -- server accept failed with error: " << Conv<int>::toString(error) << std::endl;
+        std::cout << " -- this occurs when application shuts down while listener thread is blocked on Accept call" << std::endl;
         return clientSocket;
     }
     return clientSocket;

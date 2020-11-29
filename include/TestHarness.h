@@ -176,29 +176,27 @@ void TestHarness<T, U>::harnessManager() {
 		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Harness Manager: ");
 		if (msg.getName() == "quit") {
 			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Harness Manager: ");
-			//need to send termination to other threads
-			
-			//msg.setName("shutdown");
-			//msg.setDestination(harness_ep);
-			//harness_comm.postMessage(msg);
 			break;
 		}
 		size_t i = 0;
-		while (true) {
-			size_t idx = i % thread_pool.size();
-			if (thread_pool[idx].first == READY) {
-				mLogger.log(Logger::LOG_LEVELS::LOW, "using worker-" + std::to_string(idx + 1) + " to processing test: " + msg.getMsgBody(), "Harness Manager: ");
-				wmsg = Message(thread_pool[idx].second, harness_ep);
-				wmsg.setName("job");
-				wmsg.setMsgBody(msg.getMsgBody());
-				wmsg.setTestRequester(msg.getSource());
-				harness_comm.postMessage(wmsg);
-				break;
-			}
-			else {
-				//reached case where all worker threads are busy, I think ThreadPool class will handle this case well, not going to implement anything for now
-				mLogger.log(Logger::LOG_LEVELS::LOW, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
-			}
+		size_t idx;
+		while (true) {			
+			if (thread_pool.size() > 0) {
+				idx = i % thread_pool.size();
+				if (thread_pool[idx].first == READY) {
+					mLogger.log(Logger::LOG_LEVELS::LOW, "using worker-" + std::to_string(idx + 1) + " to processing test: " + msg.getMsgBody(), "Harness Manager: ");
+					wmsg = Message(thread_pool[idx].second, harness_ep);
+					wmsg.setName("job");
+					wmsg.setMsgBody(msg.getMsgBody());
+					wmsg.setTestRequester(msg.getSource());
+					harness_comm.postMessage(wmsg);
+					break;
+				}
+				else {
+					//reached case where all worker threads are busy, I think ThreadPool class will handle this case well, not going to implement anything for now
+					mLogger.log(Logger::LOG_LEVELS::LOW, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
+				}
+			}			
 			i++;
 		}
 	}

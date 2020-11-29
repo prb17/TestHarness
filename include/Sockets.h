@@ -296,7 +296,7 @@ namespace Sockets
         std::thread clientThread(std::ref(co), std::move(clientSocket));
         clientThread.detach();  // detach - listener won't access thread again
       }
-      socketLogger.log(logLevel, " -- Listen thread stopping");
+      std::cout << " -- Listen thread stopping" << std::endl;
     }
     );
     ListenThread.detach();
