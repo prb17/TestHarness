@@ -7,6 +7,7 @@
 #include <thread>         // std::thread
 #include <mutex>          // std::mutex, std::unique_lock
 #include <deque>
+#include <winSock2.h>
 
 bool termpool;
 std::mutex queue_mutex;
@@ -105,6 +106,94 @@ void Add_Job(void (*New_Job)())
 	condition.notify_one();
 };
 
+/////////////////////////////////////////////////////////////////////
+// Test #3 - Demonstrate server with two concurrent clients
+//           sending and receiving messages
+
+//----< handler for first concurrent client >------------------------
+
+void ThreadProcClnt1()
+{
+	Comm comm(EndPoint("localhost", 9891), "client1Comm");
+	comm.start();
+	EndPoint serverEP("localhost", 9890);
+	EndPoint clientEP("localhost", 9891);
+	size_t IMax = 3;
+	for (size_t i = 0; i < IMax; ++i)
+	{
+		Message msg(serverEP, clientEP);
+		msg.setName("client #1 : msg #" + Utilities::Converter<size_t>::toString(i));
+		std::cout << "\n  " + comm.name() + " posting:  " << msg.getName();
+		comm.postMessage(msg);
+		Message rply = comm.getMessage();
+		std::cout << "\n  " + comm.name() + " received: " << rply.getName();
+		::Sleep(100);
+	}
+	::Sleep(200);
+	Message stop;
+	stop.setName("stop");
+	stop.setDestination(serverEP);
+	stop.setMsgBody("stop");
+	comm.postMessage(stop);
+}
+//----< handler for 2nd concurrent client >--------------------------
+
+void ThreadProcClnt2()
+{
+	Comm comm(EndPoint("localhost", 9892), "client2Comm");
+	comm.start();
+	EndPoint serverEP("localhost", 9890);
+	EndPoint clientEP("localhost", 9892);
+	size_t IMax = 3;
+	for (size_t i = 0; i < IMax; ++i)
+	{
+		Message msg(serverEP, clientEP);
+		msg.setName("client #2 : msg #" + Utilities::Converter<size_t>::toString(i));
+		std::cout << "\n  " + comm.name() + " posting:  " << msg.getName();
+		comm.postMessage(msg);
+		Message rply = comm.getMessage();
+		std::cout << "\n  " + comm.name() + " received: " << rply.getName();
+	}
+}
+//----< server demonstrates two-way asynchronous communication >-----
+/*
+*  - One server receiving messages and sending replies to
+*    two concurrent clients.
+*/
+void DemoClientServer()
+{
+	SocketSystem ss;
+
+	EndPoint serverEP("localhost", 9890);
+	EndPoint clientEP("localhost", 9891);
+	Comm comm(serverEP, "serverComm");
+	comm.start();
+	std::thread t1(ThreadProcClnt1);
+	t1.detach();
+	std::thread t2(ThreadProcClnt2);
+	t2.detach();
+
+	Message msg, rply;
+	rply.setName("reply");
+	size_t count = 0;
+	while (true)
+	{
+		msg = comm.getMessage();
+		std::cout << "\n  " + comm.name() + " received message: " << msg.getName();
+		//msg.show();
+		rply.setDestination(msg.getSource());
+		rply.setSource(serverEP);
+		rply.setName("server reply #" + Utilities::Converter<size_t>::toString(++count) + " to " + msg.getSource().toString());
+		//rply.show();
+		comm.postMessage(rply);
+		if (msg.getMsgBody() == "stop")
+		{
+			break;
+		}
+	}
+	comm.stop();
+	std::cout << "\n  press enter to quit DemoClientServer";
+}
 
 int main() {
 	std::vector<std::thread> worker;
@@ -112,8 +201,11 @@ int main() {
 	testObj to = testObj();
 	//TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>("outputfile.txt");
 	SocketSystem ss;
-	TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
-	intHarness.startManager();
+
+	DemoClientServer();
+
+	//TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
+	//intHarness.startManager();
 
 	//uint64_t test1 = intHarness.addTest(func1, 1);
 	//uint64_t test2 = intHarness.addTest(to, 2);

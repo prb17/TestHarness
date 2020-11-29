@@ -55,7 +55,7 @@ public:
   BlockingQueue(BlockingQueue<T>&& bq);
   BlockingQueue<T>& operator=(BlockingQueue<T>&& bq);
   BlockingQueue(const BlockingQueue<T>&);
-  //BlockingQueue<T>& operator=(const BlockingQueue<T>&) = delete;
+  BlockingQueue<T>& operator=(const BlockingQueue<T>&) = delete;
   T deQ();
   void enQ(T& t);
   T& front();

@@ -113,12 +113,8 @@ void TestHarness<T, U>::harnessWorker(int worker_id) {
 	msg.setDate(getDate());
 	msg.setMsgBody("Ready");
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
 	worker_comm.postMessage(msg);
-	mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " sent ready message");
-	Message rply = worker_comm.getMessage();
-	mLogger.log(Logger::LOG_LEVELS::LOW, worker_comm.name() + "recieved:" + rply.getName());
-	
+	mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " sent ready message");	
 	while (true) {
 		msg = worker_comm.getMessage();
 		mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is recieving messages");
@@ -161,6 +157,7 @@ void TestHarness<T, U>::messageListener() {
 	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker thread messages");
 	
 	Message msg;
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 	while (true) {
 		msg = harness_comm.getMessage();
 		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'");

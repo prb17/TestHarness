@@ -122,7 +122,7 @@
 #endif
 
 #include <Windows.h>      // Windnows API
-#include <winsock2.h>     // Windows sockets, ver 2
+#include <Winsock2.h>     // Windows sockets, ver 2
 #include <WS2tcpip.h>     // support for IPv6 and other things
 #include <IPHlpApi.h>     // ip helpers
 
@@ -172,9 +172,9 @@ namespace Sockets
 
     Socket(IpVer ipver = IP4);
     Socket(::SOCKET);
-    //Socket(Socket&& s);
+    Socket(Socket&& s);
     operator ::SOCKET() { return socket_; }
-    //Socket& operator=(Socket&& s);
+    Socket& operator=(Socket&& s);
     virtual ~Socket();
 
     IpVer& ipVer();
@@ -215,8 +215,8 @@ namespace Sockets
     SocketConnecter& operator=(const SocketConnecter& s);
 
     SocketConnecter();
-    //SocketConnecter(SocketConnecter&& s);
-    //SocketConnecter& operator=(SocketConnecter&& s);
+    SocketConnecter(SocketConnecter&& s);
+    SocketConnecter& operator=(SocketConnecter&& s);
     virtual ~SocketConnecter();
 
     bool connect(std::string& ip, size_t port);
@@ -234,8 +234,8 @@ namespace Sockets
     SocketListener& operator=(const SocketListener& s);
 
     SocketListener(size_t port, IpVer ipv = IP6);
-    //SocketListener(SocketListener&& s);
-    //SocketListener& operator=(SocketListener&& s);
+    SocketListener(SocketListener&& s);
+    SocketListener& operator=(SocketListener&& s);
     virtual ~SocketListener();
 
     template<typename CallObj>
@@ -287,6 +287,9 @@ namespace Sockets
         Socket clientSocket;
         //accept(clientSocket);    // pass ref to avoid move ctor
         clientSocket = accept();
+
+        //::SOCKET sock = ::accept(socket_, NULL, NULL);
+
         if (!clientSocket.validState()) {
           continue;
         }
@@ -294,8 +297,8 @@ namespace Sockets
 
         // start thread to handle client request
 
-        //std::thread clientThread(std::ref(co), std::move(clientSocket));
-        std::thread clientThread(co, clientSocket);
+        std::thread clientThread(std::ref(co), std::move(clientSocket));
+        //std::thread clientThread(co, clientSocket);
         clientThread.detach();  // detach - listener won't access thread again
       }
       socketLogger.log(logLevel, "\n  -- Listen thread stopping");
