@@ -131,7 +131,7 @@ void harnessProc(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::f
 		rply = client_comm.getMessage();
 		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, result: " + rply.getMsgBody());
 	}
-
+	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING:");
 	//client_comm.stop();
 	harness->stop();
 }
@@ -146,12 +146,13 @@ int main() {
 	testObj to = testObj();
 
 	uint64_t test1 = intHarness.addTest(func1, 1);
-	uint64_t test2 = intHarness.addTest(to, 2);
-	uint64_t test3 = intHarness.addTest(to, 3);
+	uint64_t test2 = intHarness.addTest(to, 70);
+	uint64_t test3 = intHarness.addTest(iTest1, true);
 	uint64_t test4 = intHarness.addTest(to, 4);
 	std::vector<uint64_t> tests;
 	tests.push_back(test1);
 	tests.push_back(test3);
+	tests.push_back(test2);
 
 	std::thread h(harnessProc, intHarness.getHarnessEndpoint(), &tests, &intHarness);
 	h.detach();

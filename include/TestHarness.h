@@ -14,7 +14,7 @@
 #include<thread>
 #include<iostream>
 
-#define NUM_THREADS 1
+#define NUM_THREADS 5
 
 using namespace MsgPassingCommunication;
 using namespace Sockets;
@@ -44,7 +44,7 @@ public:
 	uint64_t addTest(T, U);
 	void removeTest(uint64_t);
 	void clearTests();
-	void executeSingleTest(uint64_t);
+	bool executeSingleTest(uint64_t);
 	void executeTests();
 	void startManager();
 	void stop();
@@ -73,7 +73,7 @@ private:
 	std::string getDate();
 	bool Test(T);
 	bool Test(T, U);
-	void executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator);
+	bool executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator);
 };
 
 template <typename T, typename U>
@@ -130,13 +130,21 @@ void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
 			worker_comm.postMessage(rply);
 
 			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": working on job '" + msg.getMsgBody() + "'", "Harness Worker: ");
-			std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
+			//std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
+			
+			
+
 			Message result_msg = Message(msg.getTestRequester(), worker_ep);
 			result_msg.setName("Result");
 			result_msg.setDate(getDate());
 
 			//do processing
-			result_msg.setMsgBody("the result");
+			uint64_t temp = std::stoi(msg.getMsgBody());
+				mLogger.log(Logger::LOG_LEVELS::LOW,"running TEST:"+std::to_string(temp));
+			if (executeSingleTest(temp))
+				result_msg.setMsgBody("PASSED");
+			else
+				result_msg.setMsgBody("FAILED");
 			worker_comm.postMessage(result_msg);
 
 			//send test harness that this working is now ready
@@ -376,23 +384,32 @@ uint64_t TestHarness<T, U>::addTest(T testFunc, U exp_output) {
 }
 
 template <typename T, typename U>
-void TestHarness<T, U>::executeSingleTest(uint64_t test) {
-	executeSingleTest(tests.find(test));
+bool TestHarness<T, U>::executeSingleTest(uint64_t test) {
+	typename std::map<uint64_t, std::pair<T, U>>::iterator it;
+	it = tests.find(test);
+	if(it != tests.end())
+		return executeSingleTest(it);
+	else
+	{
+		mLogger.log(Logger::LOG_LEVELS::LOW, "Test not found failing");
+		return false;
+	}
 }
 
 template <typename T, typename U>
-void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
+bool TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
 	curr_test_num = it->first + 1;
-
+	bool result;
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate());
 	if (it != tests.end()) {
-		Test(it->second.first, it->second.second);
+		result = Test(it->second.first, it->second.second);
 	} else {
 		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
 		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.");
 	}
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
 	mLogger.log(Logger::LOG_LEVELS::MED, "\n \n \n \n");
+	return result;
 }
 
 template <typename T, typename U>
