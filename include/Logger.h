@@ -16,6 +16,7 @@ public:
 	Logger(std::string file_name, Logger::LOG_LEVELS level);
 	Logger(std::string file_name, Logger::LOG_LEVELS level, std::string);
 	void log(LOG_LEVELS level, std::string);
+	void log(LOG_LEVELS level, std::string, std::string);
 	void set_level(LOG_LEVELS level);
 	LOG_LEVELS get_level(void);
 	void set_prefix(std::string);

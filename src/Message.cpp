@@ -5,6 +5,12 @@ Message::Message() {}
 Message::Message(EndPoint dest, EndPoint src) {
 	source = src;
 	destination = dest;
+	name = "name";
+	msg_type = UNITIALIZED;
+	author = "author";
+	date = "date";
+	msg_body = "msg body";
+	testRequester = EndPoint();
 }
 
 //getters
@@ -15,6 +21,7 @@ Message::MESSAGE_TYPE Message::getMsgType() { return msg_type; }
 std::string Message::getAuthor() { return author; }
 std::string Message::getDate() { return date; }
 std::string Message::getMsgBody() { return msg_body; }
+EndPoint Message::getTestRequester() { return testRequester; }
 
 //setters
 void Message::setSource(EndPoint ep) { source = ep; }
@@ -24,16 +31,18 @@ void Message::setMsgType(MESSAGE_TYPE mt) { msg_type = mt; }
 void Message::setAuthor(std::string str) { author = str; }
 void Message::setDate(std::string str) { date = str; }
 void Message::setMsgBody(std::string str) { msg_body = str; }
+void Message::setTestRequester(EndPoint ep) { testRequester = ep; }
 
 std::string Message::toString() {
 	std::stringstream ss;
-	ss << source.toString() << ","
-		<< destination.toString() << ","
-		<< name << ","
-		<< msg_type << ","
-		<< author << ","
-		<< date << ","
-		<< msg_body << "\n";
+	ss << source.toString() << "\n"
+		<< destination.toString() << "\n"
+		<< name << "\n"
+		<< msg_type << "\n"
+		<< author << "\n"
+		<< date << "\n"
+		<< msg_body << "\n"
+		<< testRequester.toString() << "\n\n";
 	return ss.str();
 }
 
@@ -47,5 +56,6 @@ Message Message::fromString(const std::string& str) {
 	msg.setAuthor(splits[4]);
 	msg.setDate(splits[5]);
 	msg.setMsgBody(splits[6]);
+	msg.setTestRequester(EndPoint::fromString(splits[7]));
 	return msg;
 }

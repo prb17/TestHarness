@@ -60,9 +60,14 @@ Logger::Logger(std::string file_name, Logger::LOG_LEVELS level, std::string pref
 	return;
 }
 
+void Logger::log(LOG_LEVELS level, std::string msg, std::string prefix) {
+	log(level, prefix + msg);
+}
+
 void Logger::log(LOG_LEVELS level, std::string msg) {
-	
-	std::lock_guard<std::mutex> guard(loggerMutex);
+	static std::mutex logMutex; //to keep all logger instances synchronized
+	//std::lock_guard<std::mutex> guard(loggerMutex);
+	std::lock_guard<std::mutex> guard(logMutex);
 	if (level <= mLevel)
 	{
 		if (mFile)
