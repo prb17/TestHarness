@@ -12,8 +12,10 @@ class ThreadPool
 public:
 
     ThreadPool(int threads);
+    ThreadPool(ThreadPool const&);
+    ThreadPool& operator=(ThreadPool const&);
     ~ThreadPool();
-    void doJob(std::function <void(void)> func);
+    void doJob(std::function <void(uint64_t)> func);
 
 protected:
 
@@ -22,6 +24,6 @@ protected:
     std::mutex lock_;
     std::condition_variable condVar_;
     bool shutdown_;
-    std::queue <std::function <void(void)>> jobs_;
+    std::queue <std::function <void(uint64_t)>> jobs_;
     std::vector <std::thread> threads_;
 };

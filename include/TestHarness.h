@@ -21,8 +21,8 @@ using namespace Sockets;
 
 enum WORKER_MESSAGES {
 	STARTING_UP,
-READY,
-PROCESSING
+	READY,
+	PROCESSING
 };
 
 template <typename T, typename U>
@@ -56,11 +56,11 @@ private:
 	static BlockingQueue<Message> testRequestQueue;
 
 	void createThreads();
-	void harnessWorker(int, EndPoint);
+	//void harnessWorker(int, EndPoint);
 	void messageListener();
-	void harnessManager();
-	void workerUpdater();
-	void stopWorkers();
+	//void harnessManager();
+	//void workerUpdater();
+	//void stopWorkers();
 
 
 	uint64_t curr_test_num;
@@ -75,6 +75,7 @@ private:
 	bool Test(T);
 	bool Test(T, U);
 	void executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator);
+	void tmpFunc(uint64_t);
 };
 
 template <typename T, typename U>
@@ -92,144 +93,147 @@ BlockingQueue<Message> TestHarness<T, U>::testRequestQueue = BlockingQueue<Messa
 template <typename T, typename U>
 void TestHarness<T, U>::createThreads() {
 	std::thread listener(&TestHarness<T, U>::messageListener, this);
-	std::thread updater(&TestHarness<T, U>::workerUpdater, this);
+	//std::thread updater(&TestHarness<T, U>::workerUpdater, this);
 	listener.detach();
-	updater.detach();
+	//updater.detach();
 
-	for (int i = 1; i <= NUM_THREADS; i++) {
+	/*for (int i = 1; i <= NUM_THREADS; i++) {
 		int worker_portnum = basePort + i;
 		EndPoint worker_ep = EndPoint("localhost", worker_portnum);
 		std::thread child(&TestHarness<T, U>::harnessWorker, this, i, worker_ep);
 		std::pair<WORKER_MESSAGES, EndPoint> p = std::make_pair(STARTING_UP, worker_ep);
 		thread_pool.push_back(p);
 		child.detach();
-	}
+	}*/
 	mLogger.log(Logger::LOG_LEVELS::LOW, "finished creating threads", "Create Threads: ");
 }
 
-template <typename T, typename U>
-void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is starting", "Harness Worker: ");
-	Comm worker_comm(worker_ep, "worker-" + std::to_string(worker_id));
-	worker_comm.start();
-	Message rply = Message(harness_ep, worker_ep); //reply to testharness
-	rply.setName("Ready");
-	rply.setMsgType(Message::MESSAGE_TYPE::WORKER_MESSAGE);
-	rply.setAuthor("worker-" + std::to_string(worker_id));
-	rply.setDate(getDate());
-	rply.setMsgBody("Ready");
-	
-	worker_comm.postMessage(rply);
-	mLogger.log(Logger::LOG_LEVELS::LOW, rply.getAuthor() + " sent ready message", "Harness Worker: ");
-	Message msg;
-	while (true) {		
-		msg = worker_comm.getMessage();
-		if (msg.getName() == "job") {
-			rply.setName("Processing");
-			rply.setDate(getDate());
-			rply.setMsgBody("Processing");
-			worker_comm.postMessage(rply);
+//template <typename T, typename U>
+//void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
+//	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is starting", "Harness Worker: ");
+//	Comm worker_comm(worker_ep, "worker-" + std::to_string(worker_id));
+//	worker_comm.start();
+//	Message rply = Message(harness_ep, worker_ep); //reply to testharness
+//	rply.setName("Ready");
+//	rply.setMsgType(Message::MESSAGE_TYPE::WORKER_MESSAGE);
+//	rply.setAuthor("worker-" + std::to_string(worker_id));
+//	rply.setDate(getDate());
+//	rply.setMsgBody("Ready");
+//	
+//	worker_comm.postMessage(rply);
+//	mLogger.log(Logger::LOG_LEVELS::LOW, rply.getAuthor() + " sent ready message", "Harness Worker: ");
+//	Message msg;
+//	while (true) {		
+//		msg = worker_comm.getMessage();
+//		if (msg.getName() == "job") {
+//			rply.setName("Processing");
+//			rply.setDate(getDate());
+//			rply.setMsgBody("Processing");
+//			worker_comm.postMessage(rply);
+//
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": working on job '" + msg.getMsgBody() + "'", "Harness Worker: ");
+//			//std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
+//			Message result_msg = Message(msg.getTestRequester(), worker_ep);
+//			result_msg.setName("Result");
+//			result_msg.setDate(getDate());
+//
+//			//do processing
+//			result_msg.setMsgBody("the result");
+//			worker_comm.postMessage(result_msg);
+//
+//			//send test harness that this working is now ready
+//			rply.setName("Ready");
+//			rply.setDate(getDate());
+//			rply.setMsgBody("Ready");
+//			worker_comm.postMessage(rply);
+//
+//		}
+//		else if (msg.getName() == "quit") {
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": quitting", "Harness Worker: ");
+//			worker_comm.stop();
+//			break;
+//		}
+//		else {
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": unknown request from server, looking for new message", "Harness Worker: ");
+//		}
+//	}
+//	 //todo: change this to stop when it receives a stop message
+//	/*msg.setDestination(msg.getSource());
+//	msg.setName("finished");
+//	msg.setDate(getDate());
+//	msg.setMsgBody("finished");
+//	worker_comm.postMessage(rply);*/
+//	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is finshed", "Harness Worker: ");
+//
+//}
 
-			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": working on job '" + msg.getMsgBody() + "'", "Harness Worker: ");
-			//std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
-			Message result_msg = Message(msg.getTestRequester(), worker_ep);
-			result_msg.setName("Result");
-			result_msg.setDate(getDate());
-
-			//do processing
-			result_msg.setMsgBody("the result");
-			worker_comm.postMessage(result_msg);
-
-			//send test harness that this working is now ready
-			rply.setName("Ready");
-			rply.setDate(getDate());
-			rply.setMsgBody("Ready");
-			worker_comm.postMessage(rply);
-
-		}
-		else if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": quitting", "Harness Worker: ");
-			worker_comm.stop();
-			break;
-		}
-		else {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": unknown request from server, looking for new message", "Harness Worker: ");
-		}
-	}
-	 //todo: change this to stop when it receives a stop message
-	/*msg.setDestination(msg.getSource());
-	msg.setName("finished");
-	msg.setDate(getDate());
-	msg.setMsgBody("finished");
-	worker_comm.postMessage(rply);*/
-	mLogger.log(Logger::LOG_LEVELS::LOW, "worker: " + std::to_string(worker_id) + " is finshed", "Harness Worker: ");
-
-}
-
-template <typename T, typename U>
-void TestHarness<T, U>::harnessManager() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "harness manager is starting", "Harness Manager: ");
-
-	Message msg; //msg from outside work making test requests
-	Message wmsg; //msg to worker to do the test
-	while (true) {
-		msg = testRequestQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Harness Manager: ");
-		if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Harness Manager: ");
-			break;
-		}
-		size_t i = 0;
-		size_t idx;
-		while (true) {			
-			if (thread_pool.size() > 0) {
-				idx = i % thread_pool.size();
-				if (thread_pool[idx].first == READY) {
-					mLogger.log(Logger::LOG_LEVELS::LOW, "using worker-" + std::to_string(idx + 1) + " to processing test: " + msg.getMsgBody(), "Harness Manager: ");
-					wmsg = Message(thread_pool[idx].second, harness_ep);
-					wmsg.setName("job");
-					wmsg.setMsgBody(msg.getMsgBody());
-					wmsg.setTestRequester(msg.getSource());
-					harness_comm.postMessage(wmsg);
-					break;
-				}
-				else {
-					//reached case where all worker threads are busy, I think ThreadPool class will handle this case well, not going to implement anything for now
-					mLogger.log(Logger::LOG_LEVELS::LOW, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
-				}
-			}			
-			i++;
-		}
-	}
-}
+//template <typename T, typename U>
+//void TestHarness<T, U>::harnessManager() {
+//	mLogger.log(Logger::LOG_LEVELS::LOW, "harness manager is starting", "Harness Manager: ");
+//
+//	Message msg; //msg from outside work making test requests
+//	Message wmsg; //msg to worker to do the test
+//	while (true) {
+//		msg = testRequestQueue.deQ();
+//		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Harness Manager: ");
+//		if (msg.getName() == "quit") {
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Harness Manager: ");
+//			break;
+//		}
+//		size_t i = 0;
+//		size_t idx;
+//		while (true) {			
+//			if (thread_pool.size() > 0) {
+//				idx = i % thread_pool.size();
+//				if (thread_pool[idx].first == READY) {
+//					mLogger.log(Logger::LOG_LEVELS::LOW, "using worker-" + std::to_string(idx + 1) + " to processing test: " + msg.getMsgBody(), "Harness Manager: ");
+//					wmsg = Message(thread_pool[idx].second, harness_ep);
+//					wmsg.setName("job");
+//					wmsg.setMsgBody(msg.getMsgBody());
+//					wmsg.setTestRequester(msg.getSource());
+//					harness_comm.postMessage(wmsg);
+//					break;
+//				}
+//				else {
+//					//reached case where all worker threads are busy, I think ThreadPool class will handle this case well, not going to implement anything for now
+//					mLogger.log(Logger::LOG_LEVELS::LOW, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
+//				}
+//			}			
+//			i++;
+//		}
+//	}
+//}
 
 template <typename T, typename U>
 void TestHarness<T, U>::startManager() {
-	std::thread manager(&TestHarness<T, U>::harnessManager, this);
-	manager.join();
+	std::thread listener(&TestHarness<T, U>::messageListener, this);
+	listener.join();
+	//std::thread manager(&TestHarness<T, U>::harnessManager, this);
+	//manager.join();
+
 }
 
-template <typename T, typename U>
-void TestHarness<T, U>::stopWorkers() {
-	//Message msg = Message(harness_ep, harness_ep);
-	EndPoint temp_ep("localhost", 110000);
-	Comm temp_comm(temp_ep, "temp-comm");
-	Message msg;
-	msg.setAuthor("master-harness");
-	msg.setDate(getDate());
-	msg.setName("quit");
-	msg.setMsgBody("quit");
-	msg.setMsgType(Message::WORKER_MESSAGE);
-	for (int i = 0; i < thread_pool.size(); i++) {
-		msg.setSource(harness_ep);
-		msg.setDestination(thread_pool[i].second);
-		temp_comm.postMessage(msg);
-	}
-}
+//template <typename T, typename U>
+//void TestHarness<T, U>::stopWorkers() {
+//	//Message msg = Message(harness_ep, harness_ep);
+//	EndPoint temp_ep("localhost", 110000);
+//	Comm temp_comm(temp_ep, "temp-comm");
+//	Message msg;
+//	msg.setAuthor("master-harness");
+//	msg.setDate(getDate());
+//	msg.setName("quit");
+//	msg.setMsgBody("quit");
+//	msg.setMsgType(Message::WORKER_MESSAGE);
+//	for (int i = 0; i < thread_pool.size(); i++) {
+//		msg.setSource(harness_ep);
+//		msg.setDestination(thread_pool[i].second);
+//		temp_comm.postMessage(msg);
+//	}
+//}
 
 template <typename T, typename U>
 void TestHarness<T, U>::stop() {
-	stopWorkers();
+	//stopWorkers();
 	Message msg = Message(harness_ep, harness_ep);
 	msg.setName("quit");
 	harness_comm.postMessage(msg);
@@ -237,32 +241,32 @@ void TestHarness<T, U>::stop() {
 	//msg = harness_comm.getMessage();
 }
 
-template <typename T, typename U>
-void TestHarness<T, U>::workerUpdater() {
-	Message msg;
-	while (true) {
-		msg = readyQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Worker Updater: ");
-		if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Worker Updater: ");
-			break;
-		}
-		std::string temp = msg.getAuthor();
-		temp.erase(0, 7);
-		int idx = std::stoi(temp) - 1;
-		if (msg.getMsgBody() == "Ready") {
-			thread_pool[idx].first = READY;
-			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is ready for a task", "Worker Updater: ");
-		}
-		else if (msg.getMsgBody() == "Processing") {
-			thread_pool[idx].first = PROCESSING;
-			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is busy processing a task", "Worker Updater: ");
-		}
-		else {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "unknown process type: " + msg.getMsgBody(), "Worker Updater: ");
-		}
-	}
-}
+//template <typename T, typename U>
+//void TestHarness<T, U>::workerUpdater() {
+//	Message msg;
+//	while (true) {
+//		msg = readyQueue.deQ();
+//		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Worker Updater: ");
+//		if (msg.getName() == "quit") {
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Worker Updater: ");
+//			break;
+//		}
+//		std::string temp = msg.getAuthor();
+//		temp.erase(0, 7);
+//		int idx = std::stoi(temp) - 1;
+//		if (msg.getMsgBody() == "Ready") {
+//			thread_pool[idx].first = READY;
+//			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is ready for a task", "Worker Updater: ");
+//		}
+//		else if (msg.getMsgBody() == "Processing") {
+//			thread_pool[idx].first = PROCESSING;
+//			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is busy processing a task", "Worker Updater: ");
+//		}
+//		else {
+//			mLogger.log(Logger::LOG_LEVELS::LOW, "unknown process type: " + msg.getMsgBody(), "Worker Updater: ");
+//		}
+//	}
+//}
 
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
@@ -274,16 +278,21 @@ void TestHarness<T, U>::messageListener() {
 		mLogger.log(Logger::LOG_LEVELS::LOW, "looking for new messages", "MessageListener: ");
 		msg = harness_comm.getMessage();
 		if (msg.getName() == "quit") {
-			testRequestQueue.enQ(msg);
-			readyQueue.enQ(msg);
+			//testRequestQueue.enQ(msg);
+			//readyQueue.enQ(msg);
 			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "MessageListener: ");
 			break;
 		}
 		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
 		if (msg.getMsgType() == Message::TEST_REQUEST) {
-			testRequestQueue.enQ(msg);
+			//testRequestQueue.enQ(msg);
+			uint64_t test_num = std::stoi(msg.getMsgBody());
+			//auto lambda = static_cast<std::function<void(uint64_t)> >(&TestHarness<T, U>::tmpFunc);
+			std::function<void(uint64_t)> f;
+			f = &TestHarness<T, U>::tmpFunc;
+			threadPool.doJob(f);
 		} else if (msg.getMsgType() == Message::WORKER_MESSAGE) {
-			readyQueue.enQ(msg);
+			//readyQueue.enQ(msg);
 		} else {
 			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()), "MessageListener: ");
 		}
@@ -292,34 +301,32 @@ void TestHarness<T, U>::messageListener() {
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Logger()), 
-		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness") { //TODO: basePort won't work when creating EndPoint for some reason
+		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), //TODO: basePort won't work when creating EndPoint for some reason
+		threadPool(NUM_THREADS) { 
 	mLogger.set_prefix("TestHarness: ");
 	harness_comm.start();
-	threadPool = ThreadPool();
-	createThreads();
+	//createThreads();
 }
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name) {
-	harness_ep = EndPoint("localhost", 9090);
-	harness_comm = Comm(harness_ep, "master-harness");
+TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name),
+		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
 	harness_comm.start();
-	createThreads();
+	//createThreads();
 }
 
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
-	: curr_test_num(0), mLogger(file_name, level) {
-	harness_ep = EndPoint("localhost", 9090);
-	harness_comm = Comm(harness_ep, "master-harness");
+		: curr_test_num(0), mLogger(file_name, level), harness_ep(EndPoint("localhost", 9090)), 
+		harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
 	harness_comm.start();
-	createThreads();
+	//createThreads();
 }
 
 template <typename T, typename U>
 TestHarness<T, U>::~TestHarness() {
 	//harness_comm.stop();
-	stopWorkers();
+	//stopWorkers();
 }
 
 template <typename T, typename U>
@@ -377,6 +384,11 @@ uint64_t TestHarness<T, U>::addTest(T testFunc, U exp_output) {
 
 template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTest(uint64_t test) {
+	executeSingleTest(tests.find(test));
+}
+
+template <typename T, typename U>
+void TestHarness<T, U>::tmpFunc(uint64_t test) {
 	executeSingleTest(tests.find(test));
 }
 
