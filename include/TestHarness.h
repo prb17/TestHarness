@@ -69,6 +69,7 @@ private:
 	Comm harness_comm;
 	size_t basePort;
 	std::map<uint64_t, std::pair<T, U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
+	ThreadPool threadPool;
 
 	std::string getDate();
 	bool Test(T);
@@ -130,7 +131,7 @@ void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
 			worker_comm.postMessage(rply);
 
 			mLogger.log(Logger::LOG_LEVELS::LOW, "worker-" + std::to_string(worker_id) + ": working on job '" + msg.getMsgBody() + "'", "Harness Worker: ");
-			std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
+			//std::this_thread::sleep_for(std::chrono::seconds(2)); //simulate doing a job
 			Message result_msg = Message(msg.getTestRequester(), worker_ep);
 			result_msg.setName("Result");
 			result_msg.setDate(getDate());
@@ -294,6 +295,7 @@ TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Log
 		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness") { //TODO: basePort won't work when creating EndPoint for some reason
 	mLogger.set_prefix("TestHarness: ");
 	harness_comm.start();
+	threadPool = ThreadPool();
 	createThreads();
 }
 
