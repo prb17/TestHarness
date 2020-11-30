@@ -1,2 +1,0 @@
-C:\Users\Kyle\source\repos\TestHarness\x64\Debug\Testharness.exe
-C:\Users\Kyle\source\repos\TestHarness\x64\Debug\Testharness.pdb
