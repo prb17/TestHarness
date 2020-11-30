@@ -40,6 +40,10 @@ auto lambda = [=]() {
 };
 
 bool iTest1() {
+	for (uint64_t i = 0; i < 5000; i++)
+	{
+		Sleep(1);
+	}
 	return true;
 }
 
@@ -57,7 +61,7 @@ bool iTest3() {
 bool iTest4() {
 	int i = 0;
 	int x = 5;
-	int quotient = x / i; //not a standard exception so divide by 0 doesn't throw an error.  looking into it in the future
+	//int quotient = x / i; //not a standard exception so divide by 0 doesn't throw an error.  looking into it in the future
 	return true;
 }
 
@@ -115,6 +119,7 @@ void Add_Job(void (*New_Job)())
 
 void harnessProc(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
 	EndPoint client_ep("localhost", 10050);
+	int i,j;
 	Comm client_comm(client_ep, "client");
 	client_comm.start();
 	Message msg(dest, client_ep);
@@ -123,13 +128,19 @@ void harnessProc(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::f
 	msg.setMsgType(Message::TEST_REQUEST);
 
 	Message rply;
-	for (int i = 0; i < tests->size(); i++) {
-		msg.setMsgBody(std::to_string(tests->at(i)));
+	for(i  = 0,j =0; i < tests->size()*2;j++, i++) {
+		if (j >= tests->size())
+			j = 0; //loop through list twice to send a ton of test requests. 
+		msg.setMsgBody(std::to_string(tests->at(j)));
 		client_comm.postMessage(msg);
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request '" + std::to_string(tests->at(i)) + "' to test harness");
+		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request '" + std::to_string(tests->at(j)) + "' to test harness");
 		//std::this_thread::sleep_for(std::chrono::seconds(2));
+	}
+	while (i > 0)
+	{
 		rply = client_comm.getMessage();
 		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, result: " + rply.getMsgBody());
+		i--;
 	}
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING:");
 	//client_comm.stop();
@@ -142,19 +153,23 @@ int main() {
 	std::cout << "hello world" << std::endl;
 	TestHarness<std::function<int()>, int> intHarness = TestHarness<std::function<int()>, int>();
 	//intHarness.startManager();
-
+	std::vector<uint64_t> test_list;
 	testObj to = testObj();
 
-	uint64_t test1 = intHarness.addTest(func1, 1);
-	uint64_t test2 = intHarness.addTest(to, 70);
-	uint64_t test3 = intHarness.addTest(iTest1, true);
-	uint64_t test4 = intHarness.addTest(to, 4);
-	std::vector<uint64_t> tests;
-	tests.push_back(test1);
-	tests.push_back(test3);
-	tests.push_back(test2);
+	test_list.push_back(intHarness.addTest(func1, 55));
+	test_list.push_back(intHarness.addTest(to, 70));
+	test_list.push_back(intHarness.addTest(iTest1, true));
+	test_list.push_back(intHarness.addTest(to, 4));
+	test_list.push_back(intHarness.addTest(to, 4));
+	test_list.push_back(intHarness.addTest(iTest2, true));
+	test_list.push_back(intHarness.addTest(iTest3, true));
+	test_list.push_back(intHarness.addTest(iTest4, true));
+	test_list.push_back(intHarness.addTest(iTest5, true));
+	test_list.push_back(intHarness.addTest(iTest6, true));
+	test_list.push_back(intHarness.addTest(iTest7, true));
+	test_list.push_back(intHarness.addTest(iTest8, true));
 
-	std::thread h(harnessProc, intHarness.getHarnessEndpoint(), &tests, &intHarness);
+	std::thread h(harnessProc, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
 	h.detach();
 
 	intHarness.startManager();
@@ -188,4 +203,8 @@ int main() {
 	//boolHarness.executeTests();
 
 	//intHarness.startManager();
+	while (1)
+	{
+		Sleep(1000);
+	}
 }

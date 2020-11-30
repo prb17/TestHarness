@@ -35,7 +35,8 @@ SocketSystem::SocketSystem()
 {
     ssLogger = Logger();
     ssLogger.set_prefix("SocketSystem: ");
-    logLevel = Logger::LOG_LEVELS::LOW;
+    ssLogger.set_level(Logger::LOG_LEVELS::LOW);
+    logLevel = Logger::LOG_LEVELS::HIGH;
   int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
   if (iResult != 0) {
     ssLogger.log(logLevel, " -- WSAStartup failed with error = " + Conv<int>::toString(iResult));
@@ -88,7 +89,7 @@ Socket::Socket(::SOCKET sock) : socket_(sock)
   hints.ai_protocol = IPPROTO_TCP;
   socketLogger = Logger();
   socketLogger.set_prefix("Socket: ");
-  logLevel = Logger::LOG_LEVELS::LOW;
+  logLevel = Logger::LOG_LEVELS::HIGH;
 }
 //----< transfer socket ownership with move constructor >--------------------
 
@@ -379,7 +380,7 @@ SocketConnecter& SocketConnecter::operator=(SocketConnecter&& s)
 
 SocketConnecter::~SocketConnecter()
 {
-  socketLogger.log(logLevel, " -- SocketConnecter instance destroyed");
+  socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- SocketConnecter instance destroyed");
 }
 //----< request to connect to ip and port >----------------------------------
 
@@ -392,7 +393,7 @@ bool SocketConnecter::connect(std::string& ip, size_t port)
   const char* pTemp = ip.c_str();
   iResult = getaddrinfo(pTemp, sPort.c_str(), &hints, &result);  // was DEFAULT_PORT
   if (iResult != 0) {
-      socketLogger.log(logLevel, " -- getaddrinfo failed with error: " + Conv<int>::toString(iResult));
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- getaddrinfo failed with error: " + Conv<int>::toString(iResult));
     return false;
   }
 
@@ -424,7 +425,7 @@ bool SocketConnecter::connect(std::string& ip, size_t port)
     socket_ = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
     if (socket_ == INVALID_SOCKET) {
       int error = WSAGetLastError();
-      socketLogger.log(logLevel, " -- socket failed with error: " + Conv<int>::toString(error));
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- socket failed with error: " + Conv<int>::toString(error));
       return false;
     }
 
@@ -432,7 +433,7 @@ bool SocketConnecter::connect(std::string& ip, size_t port)
     if (iResult == SOCKET_ERROR) {
       socket_ = INVALID_SOCKET;
       int error = WSAGetLastError();
-      socketLogger.log(logLevel, " -- WSAGetLastError returned " + Conv<int>::toString(error));
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- WSAGetLastError returned " + Conv<int>::toString(error));
       continue;
     }
     break;
@@ -442,7 +443,7 @@ bool SocketConnecter::connect(std::string& ip, size_t port)
 
   if (socket_ == INVALID_SOCKET) {
     int error = WSAGetLastError();
-    socketLogger.log(logLevel, " -- unable to connect to server, error = " + Conv<int>::toString(error));
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- unable to connect to server, error = " + Conv<int>::toString(error));
     return false;
   }
   return true;
@@ -525,22 +526,22 @@ SocketListener& SocketListener::operator=(SocketListener&& s)
 
 SocketListener::~SocketListener()
 {
-    socketLogger.log(logLevel, " -- SocketListener instance destroyed");
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- SocketListener instance destroyed");
 }
 //----< binds SocketListener to a network adddress on local machine >--------
 
 bool SocketListener::bind()
 {
-    socketLogger.log(logLevel, " -- staring bind operation");
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- staring bind operation");
 
   // Resolve the server address and port
 
   size_t uport = ::htons((u_short)port_);
-  socketLogger.log(logLevel, " -- netstat uport = " + Utilities::Converter<size_t>::toString(uport));
+  socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- netstat uport = " + Utilities::Converter<size_t>::toString(uport));
   std::string sPort = Conv<size_t>::toString(uport);
   iResult = getaddrinfo(NULL, sPort.c_str(), &hints, &result);
   if (iResult != 0) {
-    socketLogger.log(logLevel, " -- getaddrinfo failed with error: " + Conv<int>::toString(iResult));
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- getaddrinfo failed with error: " + Conv<int>::toString(iResult));
     return false;
   }
 
@@ -553,17 +554,17 @@ bool SocketListener::bind()
     socket_ = socket(pResult->ai_family, pResult->ai_socktype, pResult->ai_protocol);
     if (socket_ == INVALID_SOCKET) {
       int error = WSAGetLastError();
-      socketLogger.log(logLevel, " -- socket failed with error: " + Conv<int>::toString(error));
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- socket failed with error: " + Conv<int>::toString(error));
       continue;
     }
-    socketLogger.log(logLevel, " -- server created ListenSocket");
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server created ListenSocket");
 
     // Setup the TCP listening socket
 
     iResult = ::bind(socket_, pResult->ai_addr, (int)pResult->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
       int error = WSAGetLastError();
-      socketLogger.log(logLevel, " -- bind failed with error: " + Conv<int>::toString(error));
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- bind failed with error: " + Conv<int>::toString(error));
       socket_ = INVALID_SOCKET;
       continue;
     }
@@ -574,22 +575,22 @@ bool SocketListener::bind()
     }
   }
   freeaddrinfo(result);
-  socketLogger.log(logLevel, " -- bind operation complete");
+  socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- bind operation complete");
   return true;
 }
 //----< put SocketListener in listen mode, doesn't block >-------------------
 
 bool SocketListener::listen()
 {
-    socketLogger.log(logLevel, " -- starting TCP listening socket setup");
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- starting TCP listening socket setup");
   iResult = ::listen(socket_, SOMAXCONN);
   if (iResult == SOCKET_ERROR) {
     int error = WSAGetLastError();
-    socketLogger.log(logLevel, " -- listen failed with error: " + Conv<int>::toString(error));
+    socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- listen failed with error: " + Conv<int>::toString(error));
     socket_ = INVALID_SOCKET;
     return false;
   }
-  socketLogger.log(logLevel, " -- server TCP listening socket setup complete");
+  socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server TCP listening socket setup complete");
   return true;
 }
 
@@ -600,8 +601,8 @@ Socket SocketListener::accept()
     if (!clientSocket.validState()) {
         acceptFailed_ = true;
         int error = WSAGetLastError();
-        socketLogger.log(logLevel, " -- server accept failed with error: " + Conv<int>::toString(error));
-        socketLogger.log(logLevel,
+        socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server accept failed with error: " + Conv<int>::toString(error));
+        socketLogger.log(Logger::LOG_LEVELS::HIGH,
             " -- this occurs when application shuts down while listener thread is blocked on Accept call"
         );
         return clientSocket;

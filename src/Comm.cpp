@@ -24,7 +24,7 @@ Receiver::Receiver(EndPoint ep, const std::string& name) : listener(ep.port), rc
 {
     receiverLogger = Logger();
     receiverLogger.set_prefix("Receiver: ");
-    logLevel = Logger::LOG_LEVELS::LOW;
+    logLevel = Logger::LOG_LEVELS::HIGH;
     receiverLogger.log(logLevel, " -- starting Receiver");
 }
 //----< returns reference to receive queue >-------------------------
@@ -59,7 +59,7 @@ Sender::Sender(std::string name) : sndrName(name)
 {
     senderLogger = Logger();
     senderLogger.set_prefix("Sender: ");
-    logLevel = Logger::LOG_LEVELS::LOW;
+    logLevel = Logger::LOG_LEVELS::HIGH;
     lastEP = EndPoint();  // used to detect change in destination
 }
 MsgPassingCommunication::Sender::Sender(const Sender&)
@@ -160,7 +160,7 @@ public:
   {
       clientHandlerLogger = Logger();
       clientHandlerLogger.set_prefix("ClientHandler: ");
-      logLevel = Logger::LOG_LEVELS::LOW;
+      logLevel = Logger::LOG_LEVELS::HIGH;
     clientHandlerLogger.log(logLevel, " -- starting ClientHandler");
   }
   //----< shutdown message >-----------------------------------------

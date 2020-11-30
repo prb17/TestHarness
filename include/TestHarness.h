@@ -119,7 +119,7 @@ void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
 	rply.setMsgBody("Ready");
 	
 	worker_comm.postMessage(rply);
-	mLogger.log(Logger::LOG_LEVELS::LOW, rply.getAuthor() + " sent ready message", "Harness Worker: ");
+	mLogger.log(Logger::LOG_LEVELS::MED, rply.getAuthor() + " sent ready message", "Harness Worker: ");
 	Message msg;
 	while (true) {		
 		msg = worker_comm.getMessage();
@@ -175,15 +175,15 @@ void TestHarness<T, U>::harnessWorker(int worker_id, EndPoint worker_ep) {
 
 template <typename T, typename U>
 void TestHarness<T, U>::harnessManager() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "harness manager is starting", "Harness Manager: ");
+	mLogger.log(Logger::LOG_LEVELS::HIGH, "harness manager is starting", "Harness Manager: ");
 
 	Message msg; //msg from outside work making test requests
 	Message wmsg; //msg to worker to do the test
 	while (true) {
 		msg = testRequestQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Harness Manager: ");
+		mLogger.log(Logger::LOG_LEVELS::MED, "msg request type is: " + std::to_string(msg.getMsgType()), "Harness Manager: ");
 		if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Harness Manager: ");
+			mLogger.log(Logger::LOG_LEVELS::MED, "received 'quit', quitting.", "Harness Manager: ");
 			//need to send termination to other threads
 			
 			//msg.setName("shutdown");
@@ -205,7 +205,7 @@ void TestHarness<T, U>::harnessManager() {
 			}
 			else {
 				//reached case where all worker threads are busy, I think ThreadPool class will handle this case well, not going to implement anything for now
-				mLogger.log(Logger::LOG_LEVELS::LOW, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
+				mLogger.log(Logger::LOG_LEVELS::MED, "all workers are busy, job: " + msg.getMsgBody() + " waiting for available worker", "Harness Manager: ");
 			}
 			i++;
 		}
@@ -251,9 +251,9 @@ void TestHarness<T, U>::workerUpdater() {
 	Message msg;
 	while (true) {
 		msg = readyQueue.deQ();
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg request type is: " + std::to_string(msg.getMsgType()), "Worker Updater: ");
+		mLogger.log(Logger::LOG_LEVELS::MED, "msg request type is: " + std::to_string(msg.getMsgType()), "Worker Updater: ");
 		if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "Worker Updater: ");
+			mLogger.log(Logger::LOG_LEVELS::MED, "received 'quit', quitting.", "Worker Updater: ");
 			break;
 		}
 		std::string temp = msg.getAuthor();
@@ -261,14 +261,14 @@ void TestHarness<T, U>::workerUpdater() {
 		int idx = std::stoi(temp) - 1;
 		if (msg.getMsgBody() == "Ready") {
 			thread_pool[idx].first = READY;
-			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is ready for a task", "Worker Updater: ");
+			mLogger.log(Logger::LOG_LEVELS::MED, msg.getAuthor() + " is ready for a task", "Worker Updater: ");
 		}
 		else if (msg.getMsgBody() == "Processing") {
 			thread_pool[idx].first = PROCESSING;
-			mLogger.log(Logger::LOG_LEVELS::LOW, msg.getAuthor() + " is busy processing a task", "Worker Updater: ");
+			mLogger.log(Logger::LOG_LEVELS::MED, msg.getAuthor() + " is busy processing a task", "Worker Updater: ");
 		}
 		else {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "unknown process type: " + msg.getMsgBody(), "Worker Updater: ");
+			mLogger.log(Logger::LOG_LEVELS::MED, "unknown process type: " + msg.getMsgBody(), "Worker Updater: ");
 		}
 	}
 }
@@ -276,11 +276,11 @@ void TestHarness<T, U>::workerUpdater() {
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
 void TestHarness<T, U>::messageListener() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker and test request messages", "Message Listener: ");
+	mLogger.log(Logger::LOG_LEVELS::MED, "starting to listen for worker and test request messages", "Message Listener: ");
 	
 	Message msg;
 	while (true) {
-		mLogger.log(Logger::LOG_LEVELS::LOW, "looking for new messages", "MessageListener: ");
+		mLogger.log(Logger::LOG_LEVELS::HIGH, "looking for new messages", "MessageListener: ");
 		msg = harness_comm.getMessage();
 		if (msg.getName() == "quit") {
 			testRequestQueue.enQ(msg);
@@ -288,7 +288,7 @@ void TestHarness<T, U>::messageListener() {
 			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "MessageListener: ");
 			break;
 		}
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
+		mLogger.log(Logger::LOG_LEVELS::MED, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
 		if (msg.getMsgType() == Message::TEST_REQUEST) {
 			testRequestQueue.enQ(msg);
 		} else if (msg.getMsgType() == Message::WORKER_MESSAGE) {
