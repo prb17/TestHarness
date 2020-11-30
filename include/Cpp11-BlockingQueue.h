@@ -66,7 +66,7 @@ private:
   std::mutex mtx_;
   std::condition_variable cv_;
   Logger qLogger;
-  Logger::LOG_LEVELS logLevel;
+  Logger::LOG_LEVELS logLevel = Logger::LOG_LEVELS::HIGH;
 };
 //----< copy constructor >--------------------------------------------
 template<typename T>

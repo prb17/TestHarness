@@ -42,6 +42,7 @@ inline EndPoint EndPoint::fromString(const std::string& str)
 class Message {
 public:
 	enum MESSAGE_TYPE {
+		UNITIALIZED,
 		TEST_REQUEST,
 		WORKER_MESSAGE
 	};
@@ -57,6 +58,7 @@ public:
 	std::string getAuthor();
 	std::string getDate();
 	std::string getMsgBody();
+	EndPoint getTestRequester();
 
 	//setters
 	void setSource(EndPoint);
@@ -66,6 +68,7 @@ public:
 	void setAuthor(std::string);
 	void setDate(std::string);
 	void setMsgBody(std::string);
+	void setTestRequester(EndPoint);
 
 	std::string toString();
 	static Message fromString(const std::string&);
@@ -77,4 +80,5 @@ public:
 	std::string author;
 	std::string date;
 	std::string msg_body;
+	EndPoint testRequester;
 };

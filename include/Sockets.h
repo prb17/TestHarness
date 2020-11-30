@@ -244,7 +244,6 @@ namespace Sockets
   private:
     bool bind();
     bool listen();
-    void accept(Socket&);
     Socket accept();
     std::atomic<bool> stop_ = false;
     size_t port_;
@@ -275,7 +274,7 @@ namespace Sockets
     std::thread ListenThread(
       [&]()
     {
-      socketLogger.log(logLevel, "\n  -- server waiting for connection");
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server waiting for connection");
 
       while (!acceptFailed_)
       {
@@ -285,23 +284,19 @@ namespace Sockets
         // Accept a client socket - blocking call
 
         Socket clientSocket;
-        //accept(clientSocket);    // pass ref to avoid move ctor
         clientSocket = accept();
-
-        //::SOCKET sock = ::accept(socket_, NULL, NULL);
 
         if (!clientSocket.validState()) {
           continue;
         }
-        socketLogger.log(logLevel, "\n  -- server accepted connection");
+        socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server accepted connection");
 
         // start thread to handle client request
 
         std::thread clientThread(std::ref(co), std::move(clientSocket));
-        //std::thread clientThread(co, clientSocket);
         clientThread.detach();  // detach - listener won't access thread again
       }
-      socketLogger.log(logLevel, "\n  -- Listen thread stopping");
+      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- Listen thread stopping");
     }
     );
     ListenThread.detach();

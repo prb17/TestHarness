@@ -24,8 +24,8 @@ Receiver::Receiver(EndPoint ep, const std::string& name) : listener(ep.port), rc
 {
     receiverLogger = Logger();
     receiverLogger.set_prefix("Receiver: ");
-    logLevel = Logger::LOG_LEVELS::LOW;
-    receiverLogger.log(logLevel, "\n  -- starting Receiver");
+    logLevel = Logger::LOG_LEVELS::HIGH;
+    receiverLogger.log(logLevel, " -- starting Receiver");
 }
 //----< returns reference to receive queue >-------------------------
 
@@ -50,8 +50,8 @@ void Receiver::stop()
 
 Message Receiver::getMessage()
 {
-    receiverLogger.log(logLevel, "\n  -- " + rcvrName + " deQing message");
   return rcvQ.deQ();
+  receiverLogger.log(logLevel, " -- " + rcvrName + " deQing message");
 }
 //----< constructor initializes endpoint object >--------------------
 
@@ -59,13 +59,14 @@ Sender::Sender(std::string name) : sndrName(name)
 {
     senderLogger = Logger();
     senderLogger.set_prefix("Sender: ");
-    logLevel = Logger::LOG_LEVELS::LOW;
+    logLevel = Logger::LOG_LEVELS::HIGH;
     lastEP = EndPoint();  // used to detect change in destination
 }
 MsgPassingCommunication::Sender::Sender(const Sender&)
 {
 
 }
+
 Sender& MsgPassingCommunication::Sender::operator=(Sender const& other)
 {
     // TODO: insert return statement here
@@ -94,25 +95,25 @@ void Sender::start()
 
       if (msg.getMsgBody() == "quit")
       {
-          senderLogger.log(logLevel, "\n  -- send thread shutting down");
+          senderLogger.log(logLevel, " -- send thread shutting down");
         return;
       }
-      senderLogger.log(logLevel, "\n  -- " + sndrName + " send thread sending " + msg.getName());
+      senderLogger.log(logLevel, " -- " + sndrName + " send thread sending " + msg.getName());
       std::string msgStr = msg.toString();
 
       if (msg.getDestination().address != lastEP.address || msg.getDestination().port != lastEP.port)
       {
         connecter.shutDown();
         //connecter.close();
-        senderLogger.log(logLevel, "\n  -- " + sndrName + " attempting to connect to new endpoint: " + msg.getDestination().toString());
+        senderLogger.log(logLevel, " -- " + sndrName + " attempting to connect to new endpoint: " + msg.getDestination().toString());
         if (!connect(msg.getDestination()))
         {
-            senderLogger.log(logLevel, "\n " + sndrName + " can't connect");
+            senderLogger.log(logLevel, sndrName + " can't connect");
           continue;
         }
         else
         {
-            senderLogger.log(logLevel, "\n  " + sndrName + " connected to " + msg.getDestination().toString());
+            senderLogger.log(logLevel, sndrName + " connected to " + msg.getDestination().toString());
         }
       }
       bool sendRslt = connecter.send(msgStr.length(), (Socket::byte*)msgStr.c_str());
@@ -159,14 +160,14 @@ public:
   {
       clientHandlerLogger = Logger();
       clientHandlerLogger.set_prefix("ClientHandler: ");
-      logLevel = Logger::LOG_LEVELS::LOW;
-    clientHandlerLogger.log(logLevel, "\n  -- starting ClientHandler");
+      logLevel = Logger::LOG_LEVELS::HIGH;
+    clientHandlerLogger.log(logLevel, " -- starting ClientHandler");
   }
   //----< shutdown message >-----------------------------------------
 
   ~ClientHandler() 
   { 
-      clientHandlerLogger.log(logLevel, "\n  -- ClientHandler destroyed;");
+      clientHandlerLogger.log(logLevel, " -- ClientHandler destroyed;");
   }
   //----< set BlockingQueue >----------------------------------------
 
@@ -201,14 +202,14 @@ public:
         break;
       }
       Message msg = Message::fromString(msgString);
-      clientHandlerLogger.log(logLevel, "\n  -- " + clientHandlerName + " RecvThread read message: " + msg.getName());
+      clientHandlerLogger.log(logLevel, " -- " + clientHandlerName + " RecvThread read message: " + msg.getName());
       //std::cout << "\n  -- " + clientHandlerName + " RecvThread read message: " + msg.name();
       pQ_->enQ(msg);
       //std::cout << "\n  -- message enqueued in rcvQ";
       if (msg.getMsgBody() == "quit")
         break;
     }
-    clientHandlerLogger.log(logLevel, "\n  -- terminating ClientHandler thread");
+    clientHandlerLogger.log(logLevel, " -- terminating ClientHandler thread");
   }
 private:
   BlockingQueue<Message>* pQ_;
