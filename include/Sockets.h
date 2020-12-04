@@ -274,7 +274,7 @@ namespace Sockets
     std::thread ListenThread(
       [&]()
     {
-      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server waiting for connection");
+            //std::cout << " -- server waiting for connection" << std::endl;
 
       while (!acceptFailed_)
       {
@@ -289,14 +289,14 @@ namespace Sockets
         if (!clientSocket.validState()) {
           continue;
         }
-        socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- server accepted connection");
+        //std::cout << " -- server accepted connection" << std::endl;
 
         // start thread to handle client request
 
         std::thread clientThread(std::ref(co), std::move(clientSocket));
         clientThread.detach();  // detach - listener won't access thread again
       }
-      socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- Listen thread stopping");
+      std::cout << " -- Listen thread stopping for port: " << port_ << std::endl;
     }
     );
     ListenThread.detach();

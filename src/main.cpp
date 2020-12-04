@@ -25,6 +25,7 @@ struct testObj {
 	int y = 50;
 
 	int operator()() {
+		std::this_thread::sleep_for(std::chrono::seconds(2));
 		return x + y;
 	}
 };
@@ -32,10 +33,12 @@ struct testObj {
 int x = 40;
 int y = 15;
 int func1() {
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 	return x + y;
 }
 
 auto lambda = [=]() {
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 	return x - y;
 };
 
@@ -48,19 +51,21 @@ bool iTest1() {
 }
 
 bool iTest2() {
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	return false;
 }
 
 bool iTest3() {
 
 	throw std::range_error("Out of Range");
-
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 	return true;
 }
 
 bool iTest4() {
 	int i = 0;
 	int x = 5;
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 	//int quotient = x / i; //not a standard exception so divide by 0 doesn't throw an error.  looking into it in the future
 	return true;
 }
@@ -68,28 +73,28 @@ bool iTest4() {
 bool iTest5() {
 
 	throw std::domain_error("Out of domain scope");
-
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 	return true;
 }
 
 bool iTest6() {
 
 	throw std::length_error("Out of length");
-
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 	return true;
 }
 
 bool iTest7() {
 
 	throw std::overflow_error("overflow!!");
-
+	std::this_thread::sleep_for(std::chrono::seconds(6));
 	return true;
 }
 
 bool iTest8() {
 
 	throw std::underflow_error("Underflow!!");
-
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	return true;
 }
 
@@ -203,8 +208,8 @@ int main() {
 	//boolHarness.executeTests();
 
 	//intHarness.startManager();
-	while (1)
+	/*while (1)
 	{
 		Sleep(1000);
-	}
+	}*/
 }

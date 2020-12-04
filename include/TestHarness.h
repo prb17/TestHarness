@@ -201,6 +201,7 @@ void TestHarness<T, U>::harnessManager() {
 				wmsg.setMsgBody(msg.getMsgBody());
 				wmsg.setTestRequester(msg.getSource());
 				harness_comm.postMessage(wmsg);
+				thread_pool[idx].first = PROCESSING;
 				break;
 			}
 			else {
@@ -326,7 +327,7 @@ TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
 
 template <typename T, typename U>
 TestHarness<T, U>::~TestHarness() {
-	//harness_comm.stop();
+	harness_comm.stop();
 	stopWorkers();
 }
 
