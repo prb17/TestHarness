@@ -169,7 +169,7 @@ void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::
 	while (i > 0)
 	{
 		rply = client_comm.getMessage();
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody(), clientName + ": ");
+		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody() + " test finished at: " + rply.getDate(), clientName + ": ");
 		i--;
 	}
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
