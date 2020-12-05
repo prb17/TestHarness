@@ -48,11 +48,7 @@ public:
 	void stop();
 
 private:
-	static std::vector < std::pair<WORKER_MESSAGES, EndPoint>> thread_pool; //contains the state of the thread and thread obj itself
-	static uint64_t total_test_num; //capture all tests across all loggers (of each datatype)
-	static BlockingQueue<Message> readyQueue;
-	static BlockingQueue<Message> testRequestQueue;
-	
+	static uint64_t total_test_num; //capture all tests across all loggers (of each different T,U pair)	
 
 	uint64_t curr_test_num;
 	Logger mLogger;
@@ -74,14 +70,53 @@ template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-std::vector<std::pair<WORKER_MESSAGES, EndPoint>> TestHarness<T, U>::thread_pool = std::vector<std::pair<WORKER_MESSAGES, EndPoint>>();
+TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Logger()), 
+		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), //TODO: basePort won't work when creating EndPoint for some reason
+		threadPool(NUM_THREADS) { 
+	mLogger.set_prefix("TestHarness: ");
+	harness_comm.start();
+}
 
 template <typename T, typename U>
-BlockingQueue<Message> TestHarness<T, U>::readyQueue = BlockingQueue<Message>();
+TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name),
+		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
+	mLogger.set_prefix("TestHarness: ");
+	harness_comm.start();
+}
 
 template <typename T, typename U>
-BlockingQueue<Message> TestHarness<T, U>::testRequestQueue = BlockingQueue<Message>();
+TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
+		: curr_test_num(0), mLogger(file_name, level), harness_ep(EndPoint("localhost", 9090)), 
+		harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
+	mLogger.set_prefix("TestHarness: ");
+	harness_comm.start();
+}
 
+template <typename T, typename U>
+TestHarness<T, U>::~TestHarness() {}
+
+//listens for data over a socket and enqueues the data onto appropriate queue
+template <typename T, typename U>
+void TestHarness<T, U>::messageListener() {
+	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker and test request messages", "Message Listener: ");
+
+	Message msg;
+	while (true) {
+		mLogger.log(Logger::LOG_LEVELS::LOW, "looking for new messages", "MessageListener: ");
+		msg = harness_comm.getMessage();
+		if (msg.getName() == "quit") {
+			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "MessageListener: ");
+			break;
+		}
+		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
+		if (msg.getMsgType() == Message::TEST_REQUEST) {
+			executeSingleTestAsync(msg);
+		}
+		else {
+			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()), "MessageListener: ");
+		}
+	}
+}
 
 template <typename T, typename U>
 void TestHarness<T, U>::startManager() {
@@ -97,53 +132,6 @@ void TestHarness<T, U>::stop() {
 	msg.setName("quit");
 	harness_comm.postMessage(msg);
 }
-
-//listens for data over a socket and enqueues the data onto appropriate queue
-template <typename T, typename U>
-void TestHarness<T, U>::messageListener() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker and test request messages", "Message Listener: ");
-	
-	Message msg;
-	while (true) {
-		mLogger.log(Logger::LOG_LEVELS::LOW, "looking for new messages", "MessageListener: ");
-		msg = harness_comm.getMessage();
-		if (msg.getName() == "quit") {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "MessageListener: ");
-			break;
-		}
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
-		if (msg.getMsgType() == Message::TEST_REQUEST) {
-			executeSingleTestAsync(msg);
-		} else {
-			mLogger.log(Logger::LOG_LEVELS::LOW, "unhandled message type: " + std::to_string(msg.getMsgType()), "MessageListener: ");
-		}
-	}
-}
-
-template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Logger()), 
-		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), //TODO: basePort won't work when creating EndPoint for some reason
-		threadPool(NUM_THREADS) { 
-	mLogger.set_level(Logger::LOG_LEVELS::NONE);
-	mLogger.set_prefix("TestHarness: ");
-	harness_comm.start();
-}
-
-template <typename T, typename U>
-TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name),
-		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
-	harness_comm.start();
-}
-
-template <typename T, typename U>
-TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
-		: curr_test_num(0), mLogger(file_name, level), harness_ep(EndPoint("localhost", 9090)), 
-		harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
-	harness_comm.start();
-}
-
-template <typename T, typename U>
-TestHarness<T, U>::~TestHarness() {}
 
 template <typename T, typename U>
 std::string TestHarness<T, U>::getDate() {
@@ -199,6 +187,14 @@ uint64_t TestHarness<T, U>::addTest(T testFunc, U exp_output) {
 }
 
 template <typename T, typename U>
+void TestHarness<T, U>::executeTests() {
+	typename std::map<uint64_t, std::pair<T, U>>::iterator it;
+	for (it = tests.begin(); it != tests.end(); it++) {
+		executeSingleTest(it);
+	}
+}
+
+template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTest(uint64_t test) {
 	executeSingleTest(tests.find(test));
 }
@@ -225,42 +221,31 @@ void TestHarness<T, U>::executeSingleTestAsync(Message request_msg) {
 	curr_test_num = it->first + 1;
 	
 	if (it != tests.end()) {
-		auto iTest = [=]() {			
-			mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(local_test_num) + " starting time: " + getDate());
-			T func = it->second.first;
-			U exp_output = it->second.second;
-			bool retval = false;
-			U result = false;			
-			retval = Test(func, exp_output);
+		threadPool.doJob( [=]() {
+				mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(local_test_num) + " starting time: " + getDate());
+				bool retval = Test(it->second.first, it->second.second);
 
-			//setup up message to go to whoever requested it, and from the harness
-			Message result_msg = Message(request_msg.source, harness_ep);
-			result_msg.setName("test '" + std::to_string(local_test_num) + "'");
-			result_msg.setDate(getDate());
-			//construct result
-			mLogger.log(Logger::LOG_LEVELS::LOW, "sending TEST: '" + std::to_string(local_test_num) + "' result back to requester");
-			if (retval)
-				result_msg.msg_body = "PASSED";
-			else
-				result_msg.msg_body = "FAILED";
-			harness_comm.postMessage(result_msg);
-			mLogger.log(Logger::LOG_LEVELS::MED, "Finished with test '" + std::to_string(local_test_num) + "'\n \n \n \n");
+				//setup up message to go to whoever requested it, and from the harness
+				Message result_msg = Message(request_msg.source, harness_ep);
+				result_msg.setName("test '" + std::to_string(local_test_num) + "'");
+				result_msg.setDate(getDate());
+				//construct result
+				mLogger.log(Logger::LOG_LEVELS::LOW, "sending TEST: '" + std::to_string(local_test_num) + "' result back to requester");
+				if (retval)
+					result_msg.msg_body = "PASSED";
+				else
+					result_msg.msg_body = "FAILED";
+				harness_comm.postMessage(result_msg);
+				mLogger.log(Logger::LOG_LEVELS::MED, "Finished with test '" + std::to_string(local_test_num) + "'\n \n \n \n");
 
-			return retval; };
-		threadPool.doJob(iTest);
+				return retval; 
+			}
+		);
 	}
 	else {
 		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
 		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.");
 	}	
-}
-
-template <typename T, typename U>
-void TestHarness<T, U>::executeTests() {
-	typename std::map<uint64_t, std::pair<T, U>>::iterator it;
-	for (it = tests.begin(); it != tests.end(); it++) {
-		executeSingleTest(it);
-	}
 }
 
 template <typename T, typename U>

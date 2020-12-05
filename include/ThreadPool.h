@@ -116,8 +116,7 @@ void ThreadPool<V>::threadEntry(int i)
         }
 
         // Do the job without holding any locks
-        bool retval = job();
-        std::string result = ((retval) ? "True." : "False.");
+        std::string result = ((job()) ? "True." : "False.");
         workerLogger.log(Logger::LOG_LEVELS::MED, "Result of job: " +  result);
         workerLogger.log(Logger::LOG_LEVELS::LOW, "READY");
     }
