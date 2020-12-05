@@ -42,7 +42,7 @@ public:
 	uint64_t addTest(T, U);
 	void removeTest(uint64_t);
 	void clearTests();
-	void executeSingleTest(uint64_t);
+	bool executeSingleTest(uint64_t);
 	void executeTests();
 	void startManager();
 	void stop();
@@ -75,6 +75,7 @@ TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Log
 		threadPool(NUM_THREADS) { 
 	mLogger.set_prefix("TestHarness: ");
 	harness_comm.start();
+
 }
 
 template <typename T, typename U>
@@ -95,20 +96,21 @@ TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
 template <typename T, typename U>
 TestHarness<T, U>::~TestHarness() {}
 
+
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
 void TestHarness<T, U>::messageListener() {
-	mLogger.log(Logger::LOG_LEVELS::LOW, "starting to listen for worker and test request messages", "Message Listener: ");
-
+	mLogger.log(Logger::LOG_LEVELS::MED, "starting to listen for worker and test request messages", "Message Listener: ");
+  
 	Message msg;
 	while (true) {
-		mLogger.log(Logger::LOG_LEVELS::LOW, "looking for new messages", "MessageListener: ");
+		mLogger.log(Logger::LOG_LEVELS::HIGH, "looking for new messages", "MessageListener: ");
 		msg = harness_comm.getMessage();
 		if (msg.getName() == "quit") {
 			mLogger.log(Logger::LOG_LEVELS::LOW, "received 'quit', quitting.", "MessageListener: ");
 			break;
 		}
-		mLogger.log(Logger::LOG_LEVELS::LOW, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
+		mLogger.log(Logger::LOG_LEVELS::MED, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
 		if (msg.getMsgType() == Message::TEST_REQUEST) {
 			executeSingleTestAsync(msg);
 		}
@@ -199,18 +201,19 @@ void TestHarness<T, U>::executeSingleTest(uint64_t test) {
 }
 
 template <typename T, typename U>
-void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
+bool TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
 	curr_test_num = it->first + 1;
-
+	bool result;
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate());
 	if (it != tests.end()) {
-		Test(it->second.first, it->second.second);
+		result = Test(it->second.first, it->second.second);
 	} else {
 		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
 		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.");
 	}
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
 	mLogger.log(Logger::LOG_LEVELS::MED, "\n \n \n \n");
+	return result;
 }
 
 template <typename T, typename U>

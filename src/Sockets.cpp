@@ -535,7 +535,6 @@ bool SocketListener::bind()
     socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- staring bind operation");
 
     // Resolve the server address and port
-
     size_t uport = ::htons((u_short)port_);
     socketLogger.log(Logger::LOG_LEVELS::HIGH, " -- netstat uport = " + Utilities::Converter<size_t>::toString(uport));
     std::string sPort = Conv<size_t>::toString(uport);
@@ -546,7 +545,6 @@ bool SocketListener::bind()
     }
 
     // Iterate through all results and bind to first available or all, depending on else condition, below
-
     for (auto pResult = result; pResult != NULL; pResult = pResult->ai_next)
     {
         // Create a SOCKET for connecting to server

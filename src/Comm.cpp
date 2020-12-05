@@ -167,7 +167,7 @@ public:
       clientHandlerLogger = Logger();
       clientHandlerLogger.set_prefix("ClientHandler: ");
       logLevel = Logger::LOG_LEVELS::HIGH;
-      clientHandlerLogger.log(logLevel, " -- starting ClientHandler");
+      clientHandlerLogger.log(logLevel, " -- starting ClientHandler")
   }
   //----< shutdown message >-----------------------------------------
 

@@ -272,34 +272,32 @@ namespace Sockets
     // listen on a dedicated thread so server's main thread won't block
 
     std::thread ListenThread(
-        [&]()
+      [&]()
+    {
+        //std::cout << " -- server waiting for connection" << std::endl;
+
+        while (!acceptFailed_)
         {
-            /*Logger listenLogger = Logger();
-            listenLogger.set_level(Logger::LOG_LEVELS::LOW);
-            listenLogger.log(Logger::LOG_LEVELS::HIGH, "port: " + std::to_string(port_) + " looking for connections", "Socket Listner: ");*/
+          if (stop_.load())
+          break;
 
-            while (!acceptFailed_)
-            {
-                if (stop_.load())
-                break;
+          // Accept a client socket - blocking call
 
-                // Accept a client socket - blocking call
+          Socket clientSocket;
+          clientSocket = accept();
 
-                Socket clientSocket;
-                clientSocket = accept();
+          if (!clientSocket.validState()) {
+            continue;
+          }
+          //std::cout << " -- server accepted connection" << std::endl;
 
-                if (!clientSocket.validState()) {
-                continue;
-                }
-                //listenLogger.log(Logger::LOG_LEVELS::HIGH, "server accepted connection", "Socket Listner: ");
+          // start thread to handle client request
 
-                // start thread to handle client request
-
-                std::thread clientThread(std::ref(co), std::move(clientSocket));
-                clientThread.detach();  // detach - listener won't access thread again
-                }
-            std::cout << " -- Listen thread stopping for port: " << port_ << std::endl;
+          std::thread clientThread(std::ref(co), std::move(clientSocket));
+          clientThread.detach();  // detach - listener won't access thread again
         }
+        std::cout << " -- Listen thread stopping for port: " << port_ << std::endl;
+      }
     );
     ListenThread.detach();
     return true;
