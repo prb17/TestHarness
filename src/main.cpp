@@ -143,7 +143,8 @@ void harnessProc1(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::
 	}
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
 	//msg.setName("quit");
-	client_comm.postMessage(msg);
+	//client_comm.postMessage(msg);
+	//harness->stop();
 }
 
 void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
@@ -172,8 +173,9 @@ void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::
 		i--;
 	}
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
-	msg.setName("quit");
-	client_comm.postMessage(msg);
+	/*msg.setName("quit");
+	client_comm.postMessage(msg);*/
+	harness->stop();
 }
 
 int main() {

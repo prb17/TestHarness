@@ -127,7 +127,6 @@ void TestHarness<T, U>::startManager() {
 
 template <typename T, typename U>
 void TestHarness<T, U>::stop() {
-	threadPool.~ThreadPool();
 	Message msg = Message(harness_ep, harness_ep);
 	msg.setName("quit");
 	harness_comm.postMessage(msg);
@@ -224,6 +223,7 @@ void TestHarness<T, U>::executeSingleTestAsync(Message request_msg) {
 		threadPool.doJob( [=]() {
 				mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(local_test_num) + " starting time: " + getDate());
 				bool retval = Test(it->second.first, it->second.second);
+				mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
 
 				//setup up message to go to whoever requested it, and from the harness
 				Message result_msg = Message(request_msg.source, harness_ep);

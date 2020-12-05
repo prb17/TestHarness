@@ -209,9 +209,7 @@ public:
       }
       Message msg = Message::fromString(msgString);
       clientHandlerLogger.log(logLevel, " -- " + clientHandlerName + " RecvThread read message: " + msg.getName());
-      //std::cout << "\n  -- " + clientHandlerName + " RecvThread read message: " + msg.name();
       pQ_->enQ(msg);
-      //std::cout << "\n  -- message enqueued in rcvQ";
       if (msg.getMsgBody() == "quit")
         break;
     }
