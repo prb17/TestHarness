@@ -42,7 +42,7 @@ public:
 	uint64_t addTest(T, U);
 	void removeTest(uint64_t);
 	void clearTests();
-	bool executeSingleTest(uint64_t);
+	void executeSingleTest(uint64_t);
 	void executeTests();
 	void startManager();
 	void stop();
@@ -201,7 +201,7 @@ void TestHarness<T, U>::executeSingleTest(uint64_t test) {
 }
 
 template <typename T, typename U>
-bool TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
+void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<T, U>>::iterator it) {
 	curr_test_num = it->first + 1;
 	bool result;
 	mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(curr_test_num) + " starting time: " + getDate());
@@ -220,13 +220,12 @@ template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTestAsync(Message request_msg) {
 	uint64_t local_test_num = std::stoi(request_msg.msg_body);
 	typename std::map<uint64_t, std::pair<T, U>>::iterator it = tests.find(local_test_num);
-	curr_test_num = it->first + 1;
 	
 	if (it != tests.end()) {
 		threadPool.doJob( [=]() {
 				mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(local_test_num) + " starting time: " + getDate());
 				bool retval = Test(it->second.first, it->second.second);
-				mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(curr_test_num) + " completed at time: " + getDate());
+				mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(local_test_num) + " completed at time: " + getDate());
 
 				//setup up message to go to whoever requested it, and from the harness
 				Message result_msg = Message(request_msg.source, harness_ep);

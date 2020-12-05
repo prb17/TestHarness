@@ -175,7 +175,7 @@ void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
 	/*msg.setName("quit");
 	client_comm.postMessage(msg);*/
-	harness->stop();
+	harness->stop(); //assuming this will get called after client 1
 }
 
 int main() {
