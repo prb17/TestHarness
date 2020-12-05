@@ -5,6 +5,7 @@
 class Logger {
 public:
 	enum LOG_LEVELS {
+		NONE,
 		LOW,
 		MED,
 		HIGH

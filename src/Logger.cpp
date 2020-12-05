@@ -66,7 +66,6 @@ void Logger::log(LOG_LEVELS level, std::string msg, std::string prefix) {
 
 void Logger::log(LOG_LEVELS level, std::string msg) {
 	static std::mutex logMutex; //to keep all logger instances synchronized
-	//std::lock_guard<std::mutex> guard(loggerMutex);
 	std::lock_guard<std::mutex> guard(logMutex);
 	if (level <= mLevel)
 	{

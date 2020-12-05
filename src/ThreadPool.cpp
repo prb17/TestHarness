@@ -8,6 +8,22 @@ ThreadPool::ThreadPool(int threads) : shutdown_(false)
         threads_.emplace_back(std::bind(&ThreadPool::threadEntry, this, i));
 }
 
+ThreadPool::ThreadPool(ThreadPool const& tp)
+{
+    shutdown_ = tp.shutdown_;
+    jobs_ = tp.jobs_;
+}
+
+ThreadPool& ThreadPool::operator=(ThreadPool const& tp)
+{
+    // TODO: insert return statement here
+    if (&tp != this) {
+        shutdown_ = tp.shutdown_;
+        jobs_ = tp.jobs_;
+    }
+    return *this;
+}
+
 ThreadPool::~ThreadPool()
 {
     {
@@ -24,9 +40,9 @@ ThreadPool::~ThreadPool()
         thread.join();
 }
 
-void ThreadPool::doJob(std::function <void(void)> func)
+void ThreadPool::doJob(std::function <void(uint64_t)> func)
 {
-    // Place a job on the queu and unblock a thread
+    // Place a job on the queue and unblock a thread
     std::unique_lock <std::mutex> l(lock_);
 
     jobs_.emplace(std::move(func));
@@ -35,7 +51,7 @@ void ThreadPool::doJob(std::function <void(void)> func)
 
 void ThreadPool::threadEntry(int i)
 {
-    std::function <void(void)> job;
+    std::function <void(uint64_t)> job;
 
     while (1)
     {
@@ -58,7 +74,7 @@ void ThreadPool::threadEntry(int i)
         }
 
         // Do the job without holding any locks
-        job();
+        job(i);
     }
 
 }

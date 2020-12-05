@@ -81,8 +81,14 @@ Sender& MsgPassingCommunication::Sender::operator=(Sender const& other)
 
 Sender::~Sender()
 {
-  if (sendThread.joinable())
-    sendThread.join();
+    if (sendThread.joinable()) {
+        Message msg = Message();
+        msg.setMsgBody("quit");
+        sndQ.enQ(msg);
+        sendThread.join();
+    }
+
+    
 }
 //----< starts send thread deQ, inspect, and send loop >-------------
 
@@ -161,7 +167,7 @@ public:
       clientHandlerLogger = Logger();
       clientHandlerLogger.set_prefix("ClientHandler: ");
       logLevel = Logger::LOG_LEVELS::HIGH;
-    clientHandlerLogger.log(logLevel, " -- starting ClientHandler");
+      clientHandlerLogger.log(logLevel, " -- starting ClientHandler")
   }
   //----< shutdown message >-----------------------------------------
 
@@ -203,9 +209,7 @@ public:
       }
       Message msg = Message::fromString(msgString);
       clientHandlerLogger.log(logLevel, " -- " + clientHandlerName + " RecvThread read message: " + msg.getName());
-      //std::cout << "\n  -- " + clientHandlerName + " RecvThread read message: " + msg.name();
       pQ_->enQ(msg);
-      //std::cout << "\n  -- message enqueued in rcvQ";
       if (msg.getMsgBody() == "quit")
         break;
     }

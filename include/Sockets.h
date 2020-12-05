@@ -274,30 +274,30 @@ namespace Sockets
     std::thread ListenThread(
       [&]()
     {
-            //std::cout << " -- server waiting for connection" << std::endl;
+        //std::cout << " -- server waiting for connection" << std::endl;
 
-      while (!acceptFailed_)
-      {
-        if (stop_.load())
+        while (!acceptFailed_)
+        {
+          if (stop_.load())
           break;
 
-        // Accept a client socket - blocking call
+          // Accept a client socket - blocking call
 
-        Socket clientSocket;
-        clientSocket = accept();
+          Socket clientSocket;
+          clientSocket = accept();
 
-        if (!clientSocket.validState()) {
-          continue;
+          if (!clientSocket.validState()) {
+            continue;
+          }
+          //std::cout << " -- server accepted connection" << std::endl;
+
+          // start thread to handle client request
+
+          std::thread clientThread(std::ref(co), std::move(clientSocket));
+          clientThread.detach();  // detach - listener won't access thread again
         }
-        //std::cout << " -- server accepted connection" << std::endl;
-
-        // start thread to handle client request
-
-        std::thread clientThread(std::ref(co), std::move(clientSocket));
-        clientThread.detach();  // detach - listener won't access thread again
+        std::cout << " -- Listen thread stopping for port: " << port_ << std::endl;
       }
-      std::cout << " -- Listen thread stopping for port: " << port_ << std::endl;
-    }
     );
     ListenThread.detach();
     return true;
