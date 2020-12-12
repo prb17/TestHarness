@@ -1,0 +1,12 @@
+﻿  ITestLibrary.cpp
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(73,1): warning C4297: 'iTest3': function assumed not to throw an exception but does
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(73,1): message : __declspec(nothrow), throw(), noexcept(true), or noexcept was specified on the function
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(87,1): warning C4297: 'iTest5': function assumed not to throw an exception but does
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(87,1): message : __declspec(nothrow), throw(), noexcept(true), or noexcept was specified on the function
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(93,1): warning C4297: 'iTest6': function assumed not to throw an exception but does
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(93,1): message : __declspec(nothrow), throw(), noexcept(true), or noexcept was specified on the function
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(99,1): warning C4297: 'iTest7': function assumed not to throw an exception but does
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(99,1): message : __declspec(nothrow), throw(), noexcept(true), or noexcept was specified on the function
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(105,1): warning C4297: 'iTest8': function assumed not to throw an exception but does
+C:\Users\tjenk\source\repos\ITestLibrary\ITestLibrary\ITestLibrary.cpp(105,1): message : __declspec(nothrow), throw(), noexcept(true), or noexcept was specified on the function
+  ITestLibrary.vcxproj -> C:\Users\tjenk\source\repos\ITestLibrary\Debug\ITestLibrary.dll
