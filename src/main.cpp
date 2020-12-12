@@ -11,6 +11,7 @@
 #include <mutex>          // std::mutex, std::unique_lock
 #include <deque>
 #include <winSock2.h>
+#include "ITestLibrary.h"
 
 bool termpool;
 std::mutex queue_mutex;
@@ -41,7 +42,7 @@ auto lambda = [=]() {
 	return x - y;
 };
 
-bool iTest1() {
+/*bool iTest1() {
 	for (uint64_t i = 0; i < 5000; i++)
 	{
 		Sleep(1);
@@ -90,7 +91,7 @@ bool iTest8() {
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 	throw std::underflow_error("Underflow!!");	
 	return true;
-}
+}*/
 
 void Infinite_loop_function()
 {
