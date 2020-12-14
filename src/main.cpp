@@ -11,7 +11,7 @@
 #include <mutex>          // std::mutex, std::unique_lock
 #include <deque>
 #include <winSock2.h>
-#include "ITestLibrary.h"
+//#include "../ITestLibrary/ITestLibrary/ITestLibrary.h"
 
 bool termpool;
 std::mutex queue_mutex;
@@ -129,15 +129,14 @@ void harnessProc1(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::
 	msg.setMsgType(Message::TEST_REQUEST);
 
 	Message rply;
-	for (i = 0, j = 0; i < tests->size() * 2; j++, i++) {
-		if (j >= tests->size())
-			j = 0; //loop through list twice to send a ton of test requests. 
-		msg.setMsgBody(std::to_string(tests->at(j)));
+	for (i = 0; i < 1; i++) {
+		msg.setMsgBody("C:\\Users\\Kyle\\source\\repos\\TestHarness\\ITestLibrary\\Debug\\ITestLibrary.dll");
 		client_comm.postMessage(msg);
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request '" + std::to_string(tests->at(j)) + "' to test harness", clientName + ": ");
+		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request to test harness", clientName + ": ");
 	}
 	while (i > 0)
 	{
+		mainLogger.log(Logger::LOG_LEVELS::LOW, "waiting for reply");
 		rply = client_comm.getMessage();
 		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody(), clientName + ": ");
 		i--;
@@ -190,22 +189,22 @@ int main() {
 
 	test_list.push_back(intHarness.addTest(func1, 55));
 	test_list.push_back(intHarness.addTest(to, 70));
-	test_list.push_back(intHarness.addTest(iTest1, true));
+	//test_list.push_back(intHarness.addTest(iTest1, true));
 	test_list.push_back(intHarness.addTest(to, 4));
 	test_list.push_back(intHarness.addTest(to, 4));
-	test_list.push_back(intHarness.addTest(iTest2, true));
-	test_list.push_back(intHarness.addTest(iTest3, true));
-	test_list.push_back(intHarness.addTest(iTest4, true));
-	test_list.push_back(intHarness.addTest(iTest5, true));
-	test_list.push_back(intHarness.addTest(iTest6, true));
-	test_list.push_back(intHarness.addTest(iTest7, true));
-	test_list.push_back(intHarness.addTest(iTest8, true));
+	//test_list.push_back(intHarness.addTest(iTest2, true));
+	//test_list.push_back(intHarness.addTest(iTest3, true));
+	//test_list.push_back(intHarness.addTest(iTest4, true));
+	//test_list.push_back(intHarness.addTest(iTest5, true));
+	//test_list.push_back(intHarness.addTest(iTest6, true));
+	//test_list.push_back(intHarness.addTest(iTest7, true));
+	//test_list.push_back(intHarness.addTest(iTest8, true));
 
 	std::thread h1(harnessProc1, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
 	h1.detach();
 
-	std::thread h2(harnessProc2, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
-	h2.detach();
+	///std::thread h2(harnessProc2, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
+	//h2.detach();
 
 	intHarness.startManager();
 	mainLogger.log(Logger::LOG_LEVELS::LOW, "Shutting down main");

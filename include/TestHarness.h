@@ -6,6 +6,7 @@
 #include "Message.h"
 #include "ThreadPool.h"
 
+#include <windows.h>
 #include <functional>
 #include<chrono>
 #include<ctime>
@@ -15,7 +16,7 @@
 #include<iostream>
 
 #define NUM_THREADS 20
-
+typedef int(__stdcall* f_funci)();
 using namespace MsgPassingCommunication;
 using namespace Sockets;
 
@@ -40,6 +41,7 @@ public:
 	EndPoint getHarnessEndpoint();
 	uint64_t addTest(T);
 	uint64_t addTest(T, U);
+	f_funci LibraryLoad(std::string);
 	void removeTest(uint64_t);
 	void clearTests();
 	void executeSingleTest(uint64_t);
@@ -78,6 +80,8 @@ TestHarness<T, U>::TestHarness() : curr_test_num(0), basePort(9090), mLogger(Log
 
 }
 
+
+
 template <typename T, typename U>
 TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), mLogger(file_name),
 		harness_ep(EndPoint("localhost", 9090)), harness_comm(harness_ep, "master-harness"), threadPool(NUM_THREADS) {
@@ -96,6 +100,20 @@ TestHarness<T, U>::TestHarness(std::string file_name, Logger::LOG_LEVELS level)
 template <typename T, typename U>
 TestHarness<T, U>::~TestHarness() {}
 
+template <typename T, typename U>
+f_funci TestHarness<T, U>::LibraryLoad(std::string path_to_lib)
+{
+	HINSTANCE hGetProcIDDLL = LoadLibrary(const_cast<char *>(path_to_lib.c_str()));
+	if (!hGetProcIDDLL) {
+		mLogger.log(Logger::LOG_LEVELS::LOW,"could not load the dynamic library:"+path_to_lib);
+		std::ostringstream stream;
+		stream << GetLastError();
+		mLogger.log(Logger::LOG_LEVELS::LOW, "ERROR IS:" + stream.str());
+		return NULL;
+	}
+	static f_funci func_pntr = (f_funci)GetProcAddress(hGetProcIDDLL, "ITest1");
+	return func_pntr;
+}
 
 //listens for data over a socket and enqueues the data onto appropriate queue
 template <typename T, typename U>
@@ -112,6 +130,7 @@ void TestHarness<T, U>::messageListener() {
 		}
 		mLogger.log(Logger::LOG_LEVELS::MED, "msg received from '" + msg.getAuthor() + "'", "MessageListener: ");
 		if (msg.getMsgType() == Message::TEST_REQUEST) {
+
 			executeSingleTestAsync(msg);
 		}
 		else {
@@ -218,37 +237,41 @@ void TestHarness<T, U>::executeSingleTest(typename std::map<uint64_t, std::pair<
 
 template <typename T, typename U>
 void TestHarness<T, U>::executeSingleTestAsync(Message request_msg) {
-	uint64_t local_test_num = std::stoi(request_msg.msg_body);
-	typename std::map<uint64_t, std::pair<T, U>>::iterator it = tests.find(local_test_num);
-	
-	if (it != tests.end()) {
+	//uint64_t local_test_num = std::stoi(request_msg.msg_body);
+	//typename std::map<uint64_t, std::pair<T, U>>::iterator it = tests.find(local_test_num);
+		mLogger.log(Logger::LOG_LEVELS::LOW, "attempting to read dll library");
 		threadPool.doJob( [=]() {
-				mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test number #" + std::to_string(local_test_num) + " starting time: " + getDate());
-				bool retval = Test(it->second.first, it->second.second);
-				std::string completionTime = getDate();
-				mLogger.log(Logger::LOG_LEVELS::HIGH, "test number #" + std::to_string(local_test_num) + " completed at time: " + completionTime);
-
-				//setup up message to go to whoever requested it, and from the harness
-				Message result_msg = Message(request_msg.source, harness_ep);
-				result_msg.setName("test '" + std::to_string(local_test_num) + "'");
-				result_msg.setDate(completionTime);
-				//construct result
-				mLogger.log(Logger::LOG_LEVELS::LOW, "sending TEST: '" + std::to_string(local_test_num) + "' result back to requester");
-				if (retval)
-					result_msg.msg_body = "PASSED";
-				else
-					result_msg.msg_body = "FAILED";
+			Message result_msg = Message(request_msg.source, harness_ep);
+			bool retval;
+			mLogger.log(Logger::LOG_LEVELS::LOW, "attempting to read dll library");
+			f_funci funcptr = LibraryLoad(request_msg.msg_body);
+			if (funcptr == NULL)
+			{
+				result_msg.msg_body = "FAILED";
 				harness_comm.postMessage(result_msg);
-				mLogger.log(Logger::LOG_LEVELS::MED, "Finished with test '" + std::to_string(local_test_num) + "'\n \n \n \n");
-
-				return retval; 
+				return retval;
 			}
-		);
-	}
-	else {
-		mLogger.log(Logger::LOG_LEVELS::MED, "Can't run test number '" + std::to_string(curr_test_num) + "'\n");
-		mLogger.log(Logger::LOG_LEVELS::MED, "The test number '" + std::to_string(curr_test_num) + "' most likely doesn't exist.");
-	}	
+			mLogger.log(Logger::LOG_LEVELS::HIGH, "Running test DLL" + request_msg.msg_body + " starting time: " + getDate());
+			retval = Test(funcptr, true);
+			std::string completionTime = getDate();
+			mLogger.log(Logger::LOG_LEVELS::HIGH, "test DLL" + request_msg.msg_body + " completed at time: " + completionTime);
+
+			//setup up message to go to whoever requested it, and from the harness
+				
+			result_msg.setName("test '" + request_msg.msg_body + "'");
+			result_msg.setDate(completionTime);
+			//construct result
+			mLogger.log(Logger::LOG_LEVELS::LOW, "sending TEST: '" + request_msg.msg_body + "' result back to requester");
+			if (retval)
+				result_msg.msg_body = "PASSED";
+			else
+				result_msg.msg_body = "FAILED";
+			harness_comm.postMessage(result_msg);
+			mLogger.log(Logger::LOG_LEVELS::MED, "Finished with test '" + request_msg.msg_body + "'\n \n \n \n");
+
+			return retval; 
+		}
+	);	
 }
 
 template <typename T, typename U>

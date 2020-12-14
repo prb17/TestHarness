@@ -5,6 +5,7 @@
 #include <queue>
 #include <functional>
 #include <chrono>
+#include "../include/Logger.h"
 
 
 template <typename V>
