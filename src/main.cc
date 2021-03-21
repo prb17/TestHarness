@@ -1,7 +1,6 @@
 #include<iostream>
-#include "../include/TestHarness.h"
+#include "TestHarness.h"
 
-#include "../include/TestHarness.h"
 #include <stdexcept>
 #include <functional>
 #include <cassert>
@@ -10,7 +9,8 @@
 #include <thread>         // std::thread
 #include <mutex>          // std::mutex, std::unique_lock
 #include <deque>
-#include <winSock2.h>
+#include "SimpleLogger.h"
+//#include <winSock2.h>
 //#include "../ITestLibrary/ITestLibrary/ITestLibrary.h"
 
 bool termpool;
@@ -93,90 +93,90 @@ bool iTest8() {
 	return true;
 }*/
 
-void Infinite_loop_function()
-{
-	void (*Job)();
-	while (true)
-	{
-		{
-			std::unique_lock<std::mutex> lock(queue_mutex);
-			condition.wait(lock, [] {return !Queue.empty() || termpool; });
-			Job = Queue.front();
-			Queue.pop_front();
-		}
-		Job(); // function<void()> type
-	}
-};
+// void Infinite_loop_function()
+// {
+// 	void (*Job)();
+// 	while (true)
+// 	{
+// 		{
+// 			std::unique_lock<std::mutex> lock(queue_mutex);
+// 			condition.wait(lock, [] {return !Queue.empty() || termpool; });
+// 			Job = Queue.front();
+// 			Queue.pop_front();
+// 		}
+// 		Job(); // function<void()> type
+// 	}
+// };
 
-void Add_Job(void (*New_Job)())
-{
-	{
-		std::unique_lock<std::mutex> lock(queue_mutex);
-		Queue.push_back(New_Job);
-	}
-	condition.notify_one();
-};
+// void Add_Job(void (*New_Job)())
+// {
+// 	{
+// 		std::unique_lock<std::mutex> lock(queue_mutex);
+// 		Queue.push_back(New_Job);
+// 	}
+// 	condition.notify_one();
+// };
 
-void harnessProc1(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
-	EndPoint client_ep("localhost", 10050);
-	int i, j;
-	std::string clientName = "client 1";
-	Comm client_comm(client_ep, clientName);
-	client_comm.start();
-	Message msg(dest, client_ep);
-	msg.setName(clientName);
-	msg.setAuthor(clientName);
-	msg.setMsgType(Message::TEST_REQUEST);
+// void harnessProc1(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
+// 	EndPoint client_ep("localhost", 10050);
+// 	int i, j;
+// 	std::string clientName = "client 1";
+// 	Comm client_comm(client_ep, clientName);
+// 	client_comm.start();
+// 	Message msg(dest, client_ep);
+// 	msg.setName(clientName);
+// 	msg.setAuthor(clientName);
+// 	msg.setMsgType(Message::TEST_REQUEST);
 
-	Message rply;
-	for (i = 0; i < 1; i++) {
-		msg.setMsgBody("C:\\Users\\Kyle\\source\\repos\\TestHarness\\ITestLibrary\\Debug\\ITestLibrary.dll");
-		client_comm.postMessage(msg);
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request to test harness", clientName + ": ");
-	}
-	while (i > 0)
-	{
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "waiting for reply");
-		rply = client_comm.getMessage();
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody(), clientName + ": ");
-		i--;
-	}
-	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
-	//msg.setName("quit");
-	//client_comm.postMessage(msg);
-	//harness->stop();
-}
+// 	Message rply;
+// 	for (i = 0; i < 1; i++) {
+// 		msg.setMsgBody("C:\\Users\\Kyle\\source\\repos\\TestHarness\\ITestLibrary\\Debug\\ITestLibrary.dll");
+// 		client_comm.postMessage(msg);
+// 		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request to test harness", clientName + ": ");
+// 	}
+// 	while (i > 0)
+// 	{
+// 		mainLogger.log(Logger::LOG_LEVELS::LOW, "waiting for reply");
+// 		rply = client_comm.getMessage();
+// 		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody(), clientName + ": ");
+// 		i--;
+// 	}
+// 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
+// 	//msg.setName("quit");
+// 	//client_comm.postMessage(msg);
+// 	//harness->stop();
+// }
 
-void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
-	EndPoint client_ep("localhost", 10055);
-	int i, j;
-	std::string clientName = "client 2";
-	Comm client_comm(client_ep, clientName);
-	client_comm.start();
-	Message msg(dest, client_ep);
-	msg.setName(clientName);
-	msg.setAuthor(clientName);
-	msg.setMsgType(Message::TEST_REQUEST);
+// void harnessProc2(EndPoint dest, std::vector<uint64_t>* tests, TestHarness<std::function<int()>, int>* harness) {
+// 	EndPoint client_ep("localhost", 10055);
+// 	int i, j;
+// 	std::string clientName = "client 2";
+// 	Comm client_comm(client_ep, clientName);
+// 	client_comm.start();
+// 	Message msg(dest, client_ep);
+// 	msg.setName(clientName);
+// 	msg.setAuthor(clientName);
+// 	msg.setMsgType(Message::TEST_REQUEST);
 
-	Message rply;
-	for (i = 0, j = 0; i < tests->size() * 2; j++, i++) {
-		if (j >= tests->size())
-			j = 0; //loop through list twice to send a ton of test requests. 
-		msg.setMsgBody(std::to_string(tests->at(j)));
-		client_comm.postMessage(msg);
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request '" + std::to_string(tests->at(j)) + "' to test harness", clientName + ": ");
-	}
-	while (i > 0)
-	{
-		rply = client_comm.getMessage();
-		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody() + " test finished at: " + rply.getDate(), clientName + ": ");
-		i--;
-	}
-	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
-	/*msg.setName("quit");
-	client_comm.postMessage(msg);*/
-	harness->stop(); //assuming this will get called after client 1
-}
+// 	Message rply;
+// 	for (i = 0, j = 0; i < tests->size() * 2; j++, i++) {
+// 		if (j >= tests->size())
+// 			j = 0; //loop through list twice to send a ton of test requests. 
+// 		msg.setMsgBody(std::to_string(tests->at(j)));
+// 		client_comm.postMessage(msg);
+// 		mainLogger.log(Logger::LOG_LEVELS::LOW, "sent test request '" + std::to_string(tests->at(j)) + "' to test harness", clientName + ": ");
+// 	}
+// 	while (i > 0)
+// 	{
+// 		rply = client_comm.getMessage();
+// 		mainLogger.log(Logger::LOG_LEVELS::LOW, "received reply from test harness, " + rply.getName() + " result: " + rply.getMsgBody() + " test finished at: " + rply.getDate(), clientName + ": ");
+// 		i--;
+// 	}
+// 	mainLogger.log(Logger::LOG_LEVELS::LOW, "ALL TESTS COMPLETED EXITING for '" + clientName + "'");
+// 	/*msg.setName("quit");
+// 	client_comm.postMessage(msg);*/
+// 	harness->stop(); //assuming this will get called after client 1
+// }
 
 int main() {
 	mainLogger.set_prefix("main: ");
@@ -200,15 +200,15 @@ int main() {
 	//test_list.push_back(intHarness.addTest(iTest7, true));
 	//test_list.push_back(intHarness.addTest(iTest8, true));
 
-	std::thread h1(harnessProc1, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
-	h1.detach();
+	// std::thread h1(harnessProc1, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
+	// h1.detach();
 
 	///std::thread h2(harnessProc2, intHarness.getHarnessEndpoint(), &test_list, &intHarness);
 	//h2.detach();
 
-	intHarness.startManager();
-	mainLogger.log(Logger::LOG_LEVELS::LOW, "Shutting down main");
-	//intHarness.executeSingleTest(test2);
+	//intHarness.startManager();
+	// mainLogger.log(Logger::LOG_LEVELS::LOW, "Shutting down main");
+	intHarness.executeSingleTest(test2);
 	//intHarness.removeTest(test3);
 
 	//uint64_t num = intHarness.getNumTests();
