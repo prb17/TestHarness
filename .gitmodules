@@ -1,0 +1,3 @@
+[submodule "find-cmakes"]
+	path = find-cmakes
+	url = git@github.com:prb17/find-cmakes.git
