@@ -1,6 +1,6 @@
 #pragma once
 #include "SimpleLogger.h"
-#include "BlockingQueue.h"
+#include "queues/BlockingQueue.h"
 #include "ThreadPool.h"
 
 #include<functional>
@@ -10,6 +10,8 @@
 #include<map>
 #include<thread>
 #include<iostream>
+
+#include"tests.h"
 
 #define NUM_THREADS 20
 
