@@ -11,7 +11,10 @@
 #include<thread>
 #include<iostream>
 
-#include"tests.h"
+#include "zmq.h"
+#include "czmq.h"
+
+#include "tests.h"
 
 #define NUM_THREADS 20
 
@@ -30,6 +33,7 @@ public:
 
 	void setIgnoreLevel(LOG_LEVELS);
 
+	//sync behavior
 	uint64_t getNumTests();
 	uint64_t addTest(T);
 	uint64_t addTest(T, U);
@@ -38,15 +42,20 @@ public:
 	void executeSingleTest(uint64_t);
 	void executeTests();
 
+	//async behavior
+	zloop_t *loop;
+	zsock_t *socket;
+	void test_listener();
+
 private:
 	static uint64_t total_test_num; //capture all tests across all loggers (of each different T,U pair)	
+	static int setup_test(zloop_t *, zsock_t *, void *);
 
 	uint64_t curr_test_num;
 	SimpleLogger logger;
 	std::map<uint64_t, std::pair<T, U>> tests; //contains each test function and the expected output as well as the pair's corresponding test number in the system
 	ThreadPool<std::function<bool()>> threadPool;
 
-	void messageListener();
 	std::string getDate();
 	bool Test(T);
 	bool Test(T, U);
@@ -58,13 +67,48 @@ template <typename T, typename U>
 uint64_t TestHarness<T, U>::total_test_num = 0;
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness() : curr_test_num(0), logger(SimpleLogger()), threadPool(NUM_THREADS) {}
+TestHarness<T, U>::TestHarness() : curr_test_num(0), logger(SimpleLogger()), 
+		threadPool(NUM_THREADS) {
+			loop = zloop_new();
+			socket = zsock_new_sub ("@tcp://*:9281", "");
+			zloop_reader(loop, socket, setup_test, nullptr);
+}
 
 template <typename T, typename U>
-TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), logger(file_name), threadPool(NUM_THREADS) {}
+TestHarness<T, U>::TestHarness(std::string file_name) : curr_test_num(0), 
+		logger(file_name), threadPool(NUM_THREADS) {
+			loop = zloop_new();
+			socket = zsock_new_sub ("@tcp://*:9281", "");
+			zloop_reader(loop, socket, setup_test, nullptr);
+}
 
 template <typename T, typename U>
-TestHarness<T, U>::~TestHarness() {}
+void TestHarness<T, U>::test_listener() {
+	std::cout << "starting zloop" << std::endl;
+	zloop_start(loop);
+}
+
+template<typename T, typename U>
+int TestHarness<T, U>::setup_test(zloop_t *loop, zsock_t *socket, void *pb) {
+	std::cout << "reading a test message!" << std::endl;
+	zmsg_t *msg = zmsg_recv(socket);
+	std::string str = "msg header was: " + std::string(zmsg_popstr(msg));
+	std::cout << str << std::endl;
+	std::string testObjContent = std::string(zmsg_popstr(msg));
+	str = "msg content was: " + testObjContent;
+	std::cout << str << std::endl;
+	testObj to;
+	memcpy(&to, &testObjContent, 8);
+	to();
+	std::cout << to.getResults() << std::endl;
+	return 0;
+}
+
+template <typename T, typename U>
+TestHarness<T, U>::~TestHarness() {
+	zloop_reader_end(loop, socket);
+	zloop_destroy(&loop);
+}
 
 template <typename T, typename U>
 void TestHarness<T, U>::setIgnoreLevel(LOG_LEVELS level) {

@@ -29,7 +29,8 @@ include_directories(${SimpleLogger_INCLUDE_DIRS})
 set(TestHarness_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 include_directories(${TestHarness_INCLUDE_DIRS})
 
-set(TestHarness_Tests_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tests")
-include_directories(${TestHarness_Tests_DIRS})
+set(TestHarness_Test_DEFINITIONS_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/test-definitions")
+include_directories(${TestHarness_Test_DEFINITIONS_DIRS})
 
 add_subdirectory("src")
+add_subdirectory("tests")

@@ -1,4 +1,7 @@
 
-add_executable(testHarnessMain main.cc)
-target_include_directories(testHarnessMain PUBLIC ${SimpleLogger_INCLUDE_DIRS} ${Utils_INCLUDE_DIRS})
-target_link_libraries(testHarnessMain LINK_PUBLIC SimpleLogger pthread)
+add_executable(test_harness_main main.cc)
+target_link_libraries(test_harness_main LINK_PUBLIC 
+        SimpleLogger 
+        zmq
+        czmq
+        pthread)
